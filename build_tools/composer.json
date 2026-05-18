@@ -1,0 +1,13 @@
+{
+  "name": "nihilai-collective/void-numerics-vcpkg-builder",
+  "description": "VCPKG release builder for void-numerics",
+  "type": "library",
+  "autoload": {
+    "psr-4": {
+      "void-numerics\\packager\\": "classes/packager/"
+    }
+  },
+  "require": {
+    "php": ">=8.1"
+  }
+}
