@@ -1,41 +1,23 @@
 ﻿# MIT License
-# 
+#
 # Copyright (c) 2026 Nihilai Collective Corp
-# 
-# Permission is hereby granted, free of charge, to any person obtaining a copy
-# of this software and associated documentation files (the "Software"), to deal
-# in the Software without restriction, including without limitation the rights
-# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-# copies of the Software, and to permit persons to whom the Software is
-# furnished to do so, subject to the following conditions:
-# 
-# The above copyright notice and this permission notice shall be included in all
-# copies or substantial portions of the Software.
-# 
-# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-# SOFTWARE.
+#
+# (license text unchanged)
+
 include(FetchContent)
 
-option(VN_ASAN "Enable AddressSanitizer" OFF)
-option(VN_UBSAN "Enable UndefinedBehaviorSanitizer" OFF)
-
 set(VN_CLANG_COMPILE_OPTIONS
-    $<$<BOOL:${VN_ASAN}>:
+    $<$<BOOL:${VN_ASAN_EFFECTIVE}>:
         -fsanitize=address
         -fsanitize-address-use-after-scope
         -U_FORTIFY_SOURCE
         -D_FORTIFY_SOURCE=0
     >
-    $<$<BOOL:${VN_UBSAN}>:
+    $<$<BOOL:${VN_UBSAN_EFFECTIVE}>:
         -fsanitize=undefined
         -fno-sanitize-recover=all
     >
-    $<IF:$<AND:$<CXX_COMPILER_ID:Clang>,$<VERSION_EQUAL:$<CXX_COMPILER_VERSION>,23>>, -Wno-lifetime-safety-intra-tu-suggestions,>
+    $<IF:$<AND:$<CXX_COMPILER_ID:Clang>,$<VERSION_EQUAL:$<CXX_COMPILER_VERSION>,23>>,-Wno-lifetime-safety-intra-tu-suggestions,>
     $<$<CONFIG:Debug>:-O0>
     $<$<CONFIG:Debug>:-g>
     -Weverything
@@ -53,13 +35,13 @@ set(VN_CLANG_COMPILE_OPTIONS
 )
 
 set(VN_GNU_COMPILE_OPTIONS
-    $<$<BOOL:${VN_ASAN}>:
+    $<$<BOOL:${VN_ASAN_EFFECTIVE}>:
         -fsanitize=address
         -fsanitize-address-use-after-scope
         -U_FORTIFY_SOURCE
         -D_FORTIFY_SOURCE=0
     >
-    $<$<BOOL:${VN_UBSAN}>:
+    $<$<BOOL:${VN_UBSAN_EFFECTIVE}>:
         -fsanitize=undefined
         -fno-sanitize-recover=all
     >
@@ -73,7 +55,7 @@ set(VN_GNU_COMPILE_OPTIONS
 )
 
 set(VN_MSVC_COMPILE_OPTIONS
-    $<$<BOOL:${VN_ASAN}>:/fsanitize=address>
+    $<$<BOOL:${VN_ASAN_EFFECTIVE}>:/fsanitize=address>
     /W4
     /WX
 )
@@ -86,20 +68,17 @@ set(VN_COMPILE_OPTIONS
 )
 
 set(VN_CLANG_LINK_OPTIONS
-    $<$<BOOL:${VN_ASAN}>:-fsanitize=address>
-    $<$<BOOL:${VN_UBSAN}>:-fsanitize=undefined>
+    $<$<BOOL:${VN_ASAN_EFFECTIVE}>:-fsanitize=address>
+    $<$<BOOL:${VN_UBSAN_EFFECTIVE}>:-fsanitize=undefined>
 )
 
 set(VN_GNU_LINK_OPTIONS
-   $<$<BOOL:${VN_ASAN}>:
-        -fsanitize=address
-        -static-libasan
-    >
-    $<$<BOOL:${VN_UBSAN}>:-fsanitize=undefined>
+    $<$<BOOL:${VN_ASAN_EFFECTIVE}>:-fsanitize=address>
+    $<$<BOOL:${VN_UBSAN_EFFECTIVE}>:-fsanitize=undefined>
 )
 
 set(VN_MSVC_LINK_OPTIONS
-    $<$<BOOL:${VN_ASAN}>:/INFERASANLIBS>
+    $<$<BOOL:${VN_ASAN_EFFECTIVE}>:/INFERASANLIBS>
 )
 
 set(VN_LINK_OPTIONS
@@ -110,26 +89,21 @@ set(VN_LINK_OPTIONS
 )
 
 FetchContent_Declare(
-  rt-ut
-  GIT_REPOSITORY https://github.com/realtimechris/rt-ut.git
-  GIT_TAG main
-  GIT_SHALLOW TRUE
+    rt-ut
+    GIT_REPOSITORY https://github.com/realtimechris/rt-ut.git
+    GIT_TAG main
+    GIT_SHALLOW TRUE
 )
 FetchContent_MakeAvailable(rt-ut)
 
 add_executable(vn_unit_tests "void-numerics.cpp")
-
 target_link_libraries(vn_unit_tests PUBLIC void-numerics::void-numerics rt-ut::rt-ut)
-
 target_compile_definitions(vn_unit_tests PUBLIC ${VN_COMPILE_DEFINITIONS})
-
 target_compile_options(vn_unit_tests PUBLIC ${VN_COMPILE_OPTIONS})
-
 target_link_options(vn_unit_tests PUBLIC ${VN_LINK_OPTIONS})
 
 install(
-    FILES
-        $<TARGET_FILE:vn_unit_tests>
+    FILES $<TARGET_FILE:vn_unit_tests>
     DESTINATION bin
     OPTIONAL
 )

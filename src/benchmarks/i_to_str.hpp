@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: MIT
 // Copyright (c) 2026 Nihilai Collective Corp
+// src/benchmarks/i_to_str.hpp
 
 #pragma once
 
@@ -235,8 +236,8 @@ namespace i_to_str_tests {
 
 	template<typename v_type_new> struct integer_entry {
 		using v_type = v_type_new;
-		char buf[benchmarks::max_digits_v<v_type> + 1]{};
-		char* end{ buf + benchmarks::max_digits_v<v_type> + 1 };
+		char buf[vn::detail::max_digits_v<v_type> + 1]{};
+		char* end{ buf + vn::detail::max_digits_v<v_type> + 1 };
 	};
 
 	template<uint64_t total_size, typename int_type, bool negative> struct digit_generator {
@@ -304,8 +305,8 @@ namespace i_to_str_tests {
 	struct verify_correctness {
 		template<typename int_type> static void impl(const std::vector<int_type>& test_data, const char* test_label) {
 			uint64_t vn_correct{}, vn_incorrect{};
-			uint64_t jeaiii_correct{}, jeaiii_incorrect{};
-			uint64_t fmt_format_to_correct{}, fmt_format_to_incorrect{}, total_incorrect{};
+			uint64_t jeaiii_incorrect{};
+			uint64_t fmt_format_to_incorrect{}, total_incorrect{};
 			int_type first_bad_value{};
 			bool found_bad{ false };
 			for (uint64_t x = 0; x < test_data.size(); ++x) {
@@ -332,18 +333,14 @@ namespace i_to_str_tests {
 						found_bad		= true;
 					}
 				}
-				if (same(jeaiii_end, buf_jeaiii)) {
-					++jeaiii_correct;
-				} else {
+				if (!same(jeaiii_end, buf_jeaiii)) {
 					++jeaiii_incorrect;
 					++total_incorrect;
-				}
-				if (same(fmt_format_to_end, buf_fmt_format_to)) {
-					++fmt_format_to_correct;
-				} else {
+				} 
+				if (!same(fmt_format_to_end, buf_fmt_format_to)) {
 					++fmt_format_to_incorrect;
 					++total_incorrect;
-				}
+				} 
 			}
 			if (total_incorrect > 0) {
 				std::cout << "[" << test_label << "] vn correct: " << vn_correct << " | incorrect: " << vn_incorrect << " | jeaiii incorrect: " << jeaiii_incorrect

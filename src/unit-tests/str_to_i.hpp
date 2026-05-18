@@ -90,7 +90,7 @@ namespace vn_from_chars_tests {
 		rt_ut::unit_test<name + "-from_chars powers of 10", true>::assert_eq(true, [] {
 			char buf[32]{};
 			v_type p = 1;
-			for (uint32_t i = 0; i < unit_tests::max_digits_v<v_type>; ++i) {
+			for (uint32_t i = 0; i < vn::detail::max_digits_v<v_type>; ++i) {
 				auto r = std::to_chars(buf, buf + 32, p);
 				*r.ptr = '\0';
 				if (ref_val<v_type>(buf) != vn_val<v_type>(buf))
@@ -105,7 +105,7 @@ namespace vn_from_chars_tests {
 		rt_ut::unit_test<name + "-from_chars all digit lengths at 111...1", true>::assert_eq(true, [] {
 			char buf[32]{};
 			v_type p = 0;
-			for (uint32_t i = 0; i < unit_tests::max_digits_v<v_type>; ++i) {
+			for (uint32_t i = 0; i < vn::detail::max_digits_v<v_type>; ++i) {
 				p	   = static_cast<v_type>(p * 10 + 1);
 				auto r = std::to_chars(buf, buf + 32, p);
 				*r.ptr = '\0';
@@ -118,7 +118,7 @@ namespace vn_from_chars_tests {
 		rt_ut::unit_test<name + "-from_chars all digit lengths at 999...9", true>::assert_eq(true, [] {
 			char buf[32]{};
 			v_type p = 0;
-			for (uint32_t i = 0; i < unit_tests::max_digits_v<v_type>; ++i) {
+			for (uint32_t i = 0; i < vn::detail::max_digits_v<v_type>; ++i) {
 				p	   = static_cast<v_type>(p * 10 + 9);
 				auto r = std::to_chars(buf, buf + 32, p);
 				*r.ptr = '\0';
@@ -259,7 +259,7 @@ namespace vn_from_chars_tests {
 			rt_ut::unit_test<name + "-from_chars negative powers of 10", true>::assert_eq(true, [] {
 				char buf[32]{};
 				v_type p = -1;
-				for (uint32_t i = 0; i < unit_tests::max_digits_v<v_type>; ++i) {
+				for (uint32_t i = 0; i < vn::detail::max_digits_v<v_type>; ++i) {
 					auto r = std::to_chars(buf, buf + 32, p);
 					*r.ptr = '\0';
 					if (ref_val<v_type>(buf) != vn_val<v_type>(buf))
@@ -274,7 +274,7 @@ namespace vn_from_chars_tests {
 			rt_ut::unit_test<name + "-from_chars negative all digit lengths at -111...1", true>::assert_eq(true, [] {
 				char buf[32]{};
 				v_type p = 0;
-				for (uint32_t i = 0; i < unit_tests::max_digits_v<v_type>; ++i) {
+				for (uint32_t i = 0; i < vn::detail::max_digits_v<v_type>; ++i) {
 					p	   = static_cast<v_type>(p * 10 - 1);
 					auto r = std::to_chars(buf, buf + 32, p);
 					*r.ptr = '\0';
@@ -343,7 +343,9 @@ namespace vn_from_chars_tests {
 	}
 }
 
-template<> struct unit_tests::tests<vn::detail::conversion_classes::str_to_i> {
+template<vn::detail::conversion_classes> struct tests;
+
+template<> struct tests<vn::detail::conversion_classes::str_to_i> {
 	static void impl() {
 		vn_from_chars_tests::test_function<"uint8", uint8_t>();
 		vn_from_chars_tests::test_function<"int8", int8_t>();

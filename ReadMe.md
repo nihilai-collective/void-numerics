@@ -1,44 +1,44 @@
 # void-numerics
-<p align="center"><img src="https://github.com/nihilai-collective/void-numerics/blob/dev/logo.png?raw=true" width="150"/></p>
+<p align="center"><img src="https://github.com/nihilai-collective/void-numerics/blob/main/logo.png?raw=true" width="150"/></p>
 
 **SWAR-optimized integer conversion for C++23.**
 
-`vn::to_chars` and `vn::from_chars` — drop-in replacements for the standard library equivalents*, engineered for performance. Header-only, zero-allocation, no exceptions, no RTTI.
+`vn::to_chars` and `vn::from_chars` - drop-in replacements for the standard library equivalents*, engineered for performance. Header-only, zero-allocation, no exceptions, no RTTI.
 
  ###### *For integers, float/double parsing/serializing is a WIP
 ---
 
 ## Why
 
-The C++ standard library's `<charconv>` is already fast. `void-numerics` is faster — substantially so on hot integer-conversion paths — without sacrificing correctness, portability, or API compatibility.
+The C++ standard library's `<charconv>` is already fast. `void-numerics` is faster - substantially so on hot integer-conversion paths - without sacrificing correctness, portability, or API compatibility.
 
 Every conversion is exhaustively unit-tested against `std::to_chars` / `std::from_chars` (including the LLVM libc++ test suite) and benchmarked against `std`, `jeaiii`, `fmt`, and `strtoll`/`strtoull` across 8-, 16-, 32-, and 64-bit signed and uint32_t integer types.
 
 ---
 
-## [Benchmarks](https://github.com/nihilai-collective/void-numerics/blob/dev/Benchmarks.md)
+## [Benchmarks](https://github.com/nihilai-collective/void-numerics/blob/main/Benchmarks/Index.md)
 
 ## Compiler Support
 ----
-![MSVC](https://img.shields.io/github/actions/workflow/status/nihilai-collective/void-numerics/Benchmark.yml?style=plastic&logo=microsoft&logoColor=green&label=MSVC&labelColor=pewter&color=blue&branch=dev)
-![GCC](https://img.shields.io/github/actions/workflow/status/nihilai-collective/void-numerics/Benchmark.yml?style=plastic&logo=linux&logoColor=green&label=GCC&labelColor=pewter&color=blue&branch=dev)
-![CLANG](https://img.shields.io/github/actions/workflow/status/nihilai-collective/void-numerics/Benchmark.yml?style=plastic&logo=apple&logoColor=green&label=CLANG&labelColor=pewter&color=blue&branch=dev)
+![MSVC](https://img.shields.io/github/actions/workflow/status/nihilai-collective/void-numerics/Benchmark.yml?style=plastic&logo=microsoft&logoColor=green&label=MSVC&labelColor=pewter&color=blue&branch=main)
+![GCC](https://img.shields.io/github/actions/workflow/status/nihilai-collective/void-numerics/Benchmark.yml?style=plastic&logo=linux&logoColor=green&label=GCC&labelColor=pewter&color=blue&branch=main)
+![CLANG](https://img.shields.io/github/actions/workflow/status/nihilai-collective/void-numerics/Benchmark.yml?style=plastic&logo=apple&logoColor=green&label=CLANG&labelColor=pewter&color=blue&branch=main)
 
 ## Operating System Support
 ----
-![Windows](https://img.shields.io/github/actions/workflow/status/nihilai-collective/void-numerics/Benchmark.yml?style=plastic&logo=microsoft&logoColor=green&label=Windows&labelColor=pewter&color=blue&branch=dev)
-![Linux](https://img.shields.io/github/actions/workflow/status/nihilai-collective/void-numerics/Benchmark.yml?style=plastic&logo=linux&logoColor=green&label=Linux&labelColor=pewter&color=blue&branch=dev)
-![Mac](https://img.shields.io/github/actions/workflow/status/nihilai-collective/void-numerics/Benchmark.yml?style=plastic&logo=apple&logoColor=green&label=MacOS&labelColor=pewter&color=blue&branch=dev)
+![Windows](https://img.shields.io/github/actions/workflow/status/nihilai-collective/void-numerics/Benchmark.yml?style=plastic&logo=microsoft&logoColor=green&label=Windows&labelColor=pewter&color=blue&branch=main)
+![Linux](https://img.shields.io/github/actions/workflow/status/nihilai-collective/void-numerics/Benchmark.yml?style=plastic&logo=linux&logoColor=green&label=Linux&labelColor=pewter&color=blue&branch=main)
+![Mac](https://img.shields.io/github/actions/workflow/status/nihilai-collective/void-numerics/Benchmark.yml?style=plastic&logo=apple&logoColor=green&label=MacOS&labelColor=pewter&color=blue&branch=main)
 
 ---
 
 ## Features
 
-- **API-compatible** with `std::to_chars` / `std::from_chars` — returns `std::to_chars_result` / `std::from_chars_result`
+- **API-compatible** with `std::to_chars` / `std::from_chars` - returns `std::to_chars_result` / `std::from_chars_result`
 - **All integer types**: `int8_t`, `uint8_t`, `int16_t`, `uint16_t`, `int32_t`, `uint32_t`, `int64_t`, `uint64_t`
-- **Header-only** — single include, no build step required to consume
+- **Header-only** - single include, no build step required to consume
 - **Zero allocation, zero exceptions, zero RTTI**
-- **C++23** — leverages concepts for type-correct dispatch
+- **C++23** - leverages concepts for type-correct dispatch
 - **Compile-time tables** for digit conversion and overflow bounds
 - **Multiply-and-shift division replacement** for hot paths
 - **Force-inlined helpers** with manual ladder dispatch sized to digit count
@@ -52,31 +52,35 @@ Every conversion is exhaustively unit-tested against `std::to_chars` / `std::fro
 ### Integer → string
 
 ```cpp
-#include <vn-incl/i_to_str.hpp>
+#include <void-numerics>
 
-char buffer[32];
-int64_t value = -9223372036854775807LL;
+int main() {
+    char buffer[32];
+    int64_t value = -9223372036854775807LL;
 
-auto result = vn::to_chars(buffer, buffer + sizeof(buffer), value);
-if (result.ec == std::errc{}) {
-    // result.ptr points one past the last written character
-    std::string_view text(buffer, result.ptr - buffer);
-    // text == "-9223372036854775807"
+    auto result = vn::to_chars(buffer, buffer + sizeof(buffer), value);
+    if (result.ec == std::errc{}) {
+        // result.ptr points one past the last written character
+        std::string_view text(buffer, result.ptr - buffer);
+        // text == "-9223372036854775807"
+    }
 }
 ```
 
 ### string → integer
 
 ```cpp
-#include <vn-incl/str_to_i.hpp>
+#include <void-numerics>
 
-const char* input = "42abc";
-uint32_t value{};
+int main() {
+    const char* input = "42abc";
+    uint32_t value{};
 
-auto result = vn::from_chars(input, input + 5, value);
-// result.ptr points to 'a' (first non-digit)
-// result.ec == std::errc{}
-// value == 42
+    auto result = vn::from_chars(input, input + 5, value);
+    // result.ptr points to 'a' (first non-digit)
+    // result.ec == std::errc{}
+    // value == 42
+}
 ```
 
 ### Base support
@@ -115,7 +119,7 @@ Parses an integer from `[first, last)` into `value`. Returns `{ptr, std::errc{}}
 
 ## Building
 
-`void-numerics` is header-only — copy `include/vn-incl/` into your project, or consume via CMake.
+`void-numerics` is header-only - copy `include/vn-incl/` into your project, or consume via CMake.
 
 ### CMake
 
@@ -164,7 +168,7 @@ cmake --build build
 
 ## Benchmarks
 
-The benchmark suite compares `vn::to_chars` against `std::to_chars`, `jeaiii::to_text`, and `fmt::format_to`, and `vn::from_chars` against `std::from_chars` and `strtoll`/`strtoull` — across all integer types and digit lengths, with separate runs for negative and positive signed values, and a dedicated leading-zero test.
+The benchmark suite compares `vn::to_chars` against `std::to_chars`, `jeaiii::to_text`, and `fmt::format_to`, and `vn::from_chars` against `std::from_chars` and `strtoll`/`strtoull` - across all integer types and digit lengths, with separate runs for negative and positive signed values, and a dedicated leading-zero test.
 
 ```bash
 cmake -S . -B build -DVN_BENCHMARKS=TRUE -DCMAKE_BUILD_TYPE=Release
@@ -180,7 +184,7 @@ Results report MB/s throughput per library, per benchmark stage, with win-tallie
 
 `vn::to_chars` uses a precomputed lookup table of approximately 40KB to enable 
 branch-free digit pair extraction. This is well-suited to any CPU with an L2 
-cache of 256KB or larger (all modern desktop, server, and laptop CPUs) — the 
+cache of 256KB or larger (all modern desktop, server, and laptop CPUs) - the 
 table comfortably resides in L2 while streaming integer data flows through L1, 
 with no contention between the two. Benchmarks demonstrate this behavior holds 
 even under explicit cache-eviction pressure between runs.
@@ -190,7 +194,7 @@ target.
 
 `vn::to_chars` is **not recommended for**:
 
-- Microcontrollers without L2 cache (Cortex-M0/M3/M4/M7, AVR, MSP430) — the 
+- Microcontrollers without L2 cache (Cortex-M0/M3/M4/M7, AVR, MSP430) - the 
   table cannot fit in available cache or SRAM
 - Embedded targets where total flash/SRAM is smaller than the lookup table itself
 - Any environment where the 40KB constant data footprint is unacceptable for 

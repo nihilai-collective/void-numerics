@@ -4,7 +4,6 @@
 
 #pragma once
 
-#include "utility.hpp"
 #include <void-numerics>
 #include <iostream>
 #include <charconv>
@@ -44,7 +43,7 @@ namespace vn_to_chars_tests {
 
 		rt_ut::unit_test<name + "-to_chars powers of 10", true>::assert_eq(true, [] {
 			v_type p = 1;
-			for (uint32_t i = 0; i < unit_tests::max_digits_v<v_type>; ++i) {
+			for (uint32_t i = 0; i < vn::detail::max_digits_v<v_type>; ++i) {
 				if (!chars_match<v_type>(p))
 					return false;
 				if (p > std::numeric_limits<v_type>::max() / 10)
@@ -56,7 +55,7 @@ namespace vn_to_chars_tests {
 
 		rt_ut::unit_test<name + "-to_chars all digit lengths at 111...1", true>::assert_eq(true, [] {
 			v_type p = 0;
-			for (uint32_t i = 0; i < unit_tests::max_digits_v<v_type>; ++i) {
+			for (uint32_t i = 0; i < vn::detail::max_digits_v<v_type>; ++i) {
 				p = static_cast<v_type>(p * 10 + 1);
 				if (!chars_match<v_type>(p))
 					return false;
@@ -66,7 +65,7 @@ namespace vn_to_chars_tests {
 
 		rt_ut::unit_test<name + "-to_chars all digit lengths at 999...9", true>::assert_eq(true, [] {
 			v_type p = 0;
-			for (uint32_t i = 0; i < unit_tests::max_digits_v<v_type>; ++i) {
+			for (uint32_t i = 0; i < vn::detail::max_digits_v<v_type>; ++i) {
 				p = static_cast<v_type>(p * 10 + 9);
 				if (p < 0 || !chars_match<v_type>(p))
 					return false;
@@ -136,7 +135,7 @@ namespace vn_to_chars_tests {
 
 			rt_ut::unit_test<name + "-to_chars negative powers of 10", true>::assert_eq(true, [] {
 				v_type p = -1;
-				for (uint32_t i = 0; i < unit_tests::max_digits_v<v_type>; ++i) {
+				for (uint32_t i = 0; i < vn::detail::max_digits_v<v_type>; ++i) {
 					if (!chars_match<v_type>(p))
 						return false;
 					if (p < std::numeric_limits<v_type>::min() / 10)
@@ -148,7 +147,7 @@ namespace vn_to_chars_tests {
 
 			rt_ut::unit_test<name + "-to_chars negative all digit lengths at -111...1", true>::assert_eq(true, [] {
 				v_type p = 0;
-				for (uint32_t i = 0; i < unit_tests::max_digits_v<v_type>; ++i) {
+				for (uint32_t i = 0; i < vn::detail::max_digits_v<v_type>; ++i) {
 					p = static_cast<v_type>(p * 10 - 1);
 					if (!chars_match<v_type>(p))
 						return false;
@@ -202,7 +201,9 @@ namespace vn_to_chars_tests {
 
 }
 
-template<> struct unit_tests::tests<vn::detail::conversion_classes::i_to_str> {
+template<vn::detail::conversion_classes> struct tests;
+
+template<> struct tests<vn::detail::conversion_classes::i_to_str> {
 	static void impl() {
 		vn_to_chars_tests::test_function<"uint8", uint8_t>();
 		vn_to_chars_tests::test_function<"int8", int8_t>();

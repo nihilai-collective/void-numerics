@@ -100,36 +100,28 @@ namespace vn {
 			uint64_t length{ static_cast<uint64_t>(end - iter) };
 			switch (length) {
 				case 1: {
-					iter += first_non_zero_byte<1ULL>::impl(iter);
-					return iter;
+					return iter + first_non_zero_byte<1ULL>::impl(iter);
 				}
 				case 2: {
-					iter += first_non_zero_byte<2ULL>::impl(iter);
-					return iter;
+					return iter + first_non_zero_byte<2ULL>::impl(iter);
 				}
 				case 3: {
-					iter += first_non_zero_byte<3ULL>::impl(iter);
-					return iter;
+					return iter + first_non_zero_byte<3ULL>::impl(iter);
 				}
 				case 4: {
-					iter += first_non_zero_byte<4ULL>::impl(iter);
-					return iter;
+					return iter + first_non_zero_byte<4ULL>::impl(iter);
 				}
 				case 5: {
-					iter += first_non_zero_byte<5ULL>::impl(iter);
-					return iter;
+					return iter + first_non_zero_byte<5ULL>::impl(iter);
 				}
 				case 6: {
-					iter += first_non_zero_byte<6ULL>::impl(iter);
-					return iter;
+					return iter + first_non_zero_byte<6ULL>::impl(iter);
 				}
 				case 7: {
-					iter += first_non_zero_byte<7ULL>::impl(iter);
-					return iter;
+					return iter + first_non_zero_byte<7ULL>::impl(iter);
 				}
 				case 8: {
-					iter += first_non_zero_byte<8ULL>::impl(iter);
-					return iter;
+					return iter + first_non_zero_byte<8ULL>::impl(iter);
 				}
 				default: {
 					while (iter + 8 < end && *iter == zero) {
@@ -202,303 +194,6 @@ namespace vn {
 			if constexpr (sizeof(v_type) > 1) {
 				if VN_LIKELY (iter < end) {
 					c = static_cast<uint8_t>(*iter);
-					if VN_LIKELY (vn_is_digit(c)) {
-						value = static_cast<v_type_local>(value * 10 + (c - zero));
-						++iter;
-					} else {
-						return iter;
-					}
-				} else {
-					if constexpr (negative) {
-						value_new = static_cast<v_type>(zero_val - value);
-					} else {
-						value_new = static_cast<v_type>(value);
-					}
-					return iter;
-				}
-
-				if VN_LIKELY (iter < end) {
-					c = static_cast<uint8_t>(*iter);
-					if VN_LIKELY (vn_is_digit(c)) {
-						value = static_cast<v_type_local>(value * 10 + (c - zero));
-						++iter;
-					} else {
-						return iter;
-					}
-				} else {
-					if constexpr (negative) {
-						value_new = static_cast<v_type>(zero_val - value);
-					} else {
-						value_new = static_cast<v_type>(value);
-					}
-					return iter;
-				}
-
-				if constexpr (sizeof(v_type) > 2) {
-					if VN_LIKELY (iter < end) {
-						c = static_cast<uint8_t>(*iter);
-						if VN_LIKELY (vn_is_digit(c)) {
-							value = static_cast<v_type_local>(value * 10 + (c - zero));
-							++iter;
-						} else {
-							return iter;
-						}
-					} else {
-						if constexpr (negative) {
-							value_new = static_cast<v_type>(zero_val - value);
-						} else {
-							value_new = static_cast<v_type>(value);
-						}
-						return iter;
-					}
-
-					if VN_LIKELY (iter < end) {
-						c = static_cast<uint8_t>(*iter);
-						if VN_LIKELY (vn_is_digit(c)) {
-							value = static_cast<v_type_local>(value * 10 + (c - zero));
-							++iter;
-						} else {
-							return iter;
-						}
-					} else {
-						if constexpr (negative) {
-							value_new = static_cast<v_type>(zero_val - value);
-						} else {
-							value_new = static_cast<v_type>(value);
-						}
-						return iter;
-					}
-
-					if VN_LIKELY (iter < end) {
-						c = static_cast<uint8_t>(*iter);
-						if VN_LIKELY (vn_is_digit(c)) {
-							value = static_cast<v_type_local>(value * 10 + (c - zero));
-							++iter;
-						} else {
-							return iter;
-						}
-					} else {
-						if constexpr (negative) {
-							value_new = static_cast<v_type>(zero_val - value);
-						} else {
-							value_new = static_cast<v_type>(value);
-						}
-						return iter;
-					}
-
-					if VN_LIKELY (iter < end) {
-						c = static_cast<uint8_t>(*iter);
-						if VN_LIKELY (vn_is_digit(c)) {
-							value = static_cast<v_type_local>(value * 10 + (c - zero));
-							++iter;
-						} else {
-							return iter;
-						}
-					} else {
-						if constexpr (negative) {
-							value_new = static_cast<v_type>(zero_val - value);
-						} else {
-							value_new = static_cast<v_type>(value);
-						}
-						return iter;
-					}
-
-					if VN_LIKELY (iter < end) {
-						c = static_cast<uint8_t>(*iter);
-						if VN_LIKELY (vn_is_digit(c)) {
-							value = static_cast<v_type_local>(value * 10 + (c - zero));
-							++iter;
-						} else {
-							return iter;
-						}
-					} else {
-						if constexpr (negative) {
-							value_new = static_cast<v_type>(zero_val - value);
-						} else {
-							value_new = static_cast<v_type>(value);
-						}
-						return iter;
-					}
-
-					if constexpr (sizeof(v_type) > 4) {
-						if VN_LIKELY (iter < end) {
-							c = static_cast<uint8_t>(*iter);
-							if VN_LIKELY (vn_is_digit(c)) {
-								value = static_cast<v_type_local>(value * 10 + (c - zero));
-								++iter;
-							} else {
-								return iter;
-							}
-						} else {
-							if constexpr (negative) {
-								value_new = static_cast<v_type>(zero_val - value);
-							} else {
-								value_new = static_cast<v_type>(value);
-							}
-							return iter;
-						}
-
-						if VN_LIKELY (iter < end) {
-							c = static_cast<uint8_t>(*iter);
-							if VN_LIKELY (vn_is_digit(c)) {
-								value = static_cast<v_type_local>(value * 10 + (c - zero));
-								++iter;
-							} else {
-								return iter;
-							}
-						} else {
-							if constexpr (negative) {
-								value_new = static_cast<v_type>(zero_val - value);
-							} else {
-								value_new = static_cast<v_type>(value);
-							}
-							return iter;
-						}
-
-						if VN_LIKELY (iter < end) {
-							c = static_cast<uint8_t>(*iter);
-							if VN_LIKELY (vn_is_digit(c)) {
-								value = static_cast<v_type_local>(value * 10 + (c - zero));
-								++iter;
-							} else {
-								return iter;
-							}
-						} else {
-							if constexpr (negative) {
-								value_new = static_cast<v_type>(zero_val - value);
-							} else {
-								value_new = static_cast<v_type>(value);
-							}
-							return iter;
-						}
-
-						if VN_LIKELY (iter < end) {
-							c = static_cast<uint8_t>(*iter);
-							if VN_LIKELY (vn_is_digit(c)) {
-								value = static_cast<v_type_local>(value * 10 + (c - zero));
-								++iter;
-							} else {
-								return iter;
-							}
-						} else {
-							if constexpr (negative) {
-								value_new = static_cast<v_type>(zero_val - value);
-							} else {
-								value_new = static_cast<v_type>(value);
-							}
-							return iter;
-						}
-
-						if VN_LIKELY (iter < end) {
-							c = static_cast<uint8_t>(*iter);
-							if VN_LIKELY (vn_is_digit(c)) {
-								value = static_cast<v_type_local>(value * 10 + (c - zero));
-								++iter;
-							} else {
-								return iter;
-							}
-						} else {
-							if constexpr (negative) {
-								value_new = static_cast<v_type>(zero_val - value);
-							} else {
-								value_new = static_cast<v_type>(value);
-							}
-							return iter;
-						}
-
-						if VN_LIKELY (iter < end) {
-							c = static_cast<uint8_t>(*iter);
-							if VN_LIKELY (vn_is_digit(c)) {
-								value = static_cast<v_type_local>(value * 10 + (c - zero));
-								++iter;
-							} else {
-								return iter;
-							}
-						} else {
-							if constexpr (negative) {
-								value_new = static_cast<v_type>(zero_val - value);
-							} else {
-								value_new = static_cast<v_type>(value);
-							}
-							return iter;
-						}
-
-						if VN_LIKELY (iter < end) {
-							c = static_cast<uint8_t>(*iter);
-							if VN_LIKELY (vn_is_digit(c)) {
-								value = static_cast<v_type_local>(value * 10 + (c - zero));
-								++iter;
-							} else {
-								return iter;
-							}
-						} else {
-							if constexpr (negative) {
-								value_new = static_cast<v_type>(zero_val - value);
-							} else {
-								value_new = static_cast<v_type>(value);
-							}
-							return iter;
-						}
-
-						if VN_LIKELY (iter < end) {
-							c = static_cast<uint8_t>(*iter);
-							if VN_LIKELY (vn_is_digit(c)) {
-								value = static_cast<v_type_local>(value * 10 + (c - zero));
-								++iter;
-							} else {
-								return iter;
-							}
-						} else {
-							if constexpr (negative) {
-								value_new = static_cast<v_type>(zero_val - value);
-							} else {
-								value_new = static_cast<v_type>(value);
-							}
-							return iter;
-						}
-
-						if VN_LIKELY (iter < end) {
-							c = static_cast<uint8_t>(*iter);
-							if VN_LIKELY (vn_is_digit(c)) {
-								value = static_cast<v_type_local>(value * 10 + (c - zero));
-								++iter;
-							} else {
-								return iter;
-							}
-						} else {
-							if constexpr (negative) {
-								value_new = static_cast<v_type>(zero_val - value);
-							} else {
-								value_new = static_cast<v_type>(value);
-							}
-							return iter;
-						}
-
-						if constexpr (uint_types<v_type>) {
-							if VN_LIKELY (iter < end) {
-								c = static_cast<uint8_t>(*iter);
-								if VN_LIKELY (vn_is_digit(c)) {
-									value = static_cast<v_type_local>(value * 10 + (c - zero));
-									++iter;
-								} else {
-									return iter;
-								}
-							} else {
-								if constexpr (negative) {
-									value_new = static_cast<v_type>(zero_val - value);
-								} else {
-									value_new = static_cast<v_type>(value);
-								}
-								return iter;
-							}
-						}
-					}
-				}
-			}
-
-			if VN_LIKELY (iter < end) {
-				c = static_cast<uint8_t>(*iter);
-				if VN_LIKELY (vn_is_digit(c)) {
 					if VN_UNLIKELY (static_cast<uint64_t>(value) > static_cast<uint64_t>(comp_vals<v_type, negative>[c])) {
 						while (++iter < end && vn_is_digit(static_cast<uint8_t>(*iter))) {
 						}
@@ -514,6 +209,311 @@ namespace vn {
 					}
 					return iter;
 				}
+
+				if VN_LIKELY (iter < end) {
+					c = static_cast<uint8_t>(*iter);
+					if VN_UNLIKELY (static_cast<uint64_t>(value) > static_cast<uint64_t>(comp_vals<v_type, negative>[c])) {
+						while (++iter < end && vn_is_digit(static_cast<uint8_t>(*iter))) {
+						}
+						return iter;
+					}
+					value = static_cast<v_type_local>(value * 10 + (c - zero));
+					++iter;
+				} else {
+					if constexpr (negative) {
+						value_new = static_cast<v_type>(zero_val - value);
+					} else {
+						value_new = static_cast<v_type>(value);
+					}
+					return iter;
+				}
+
+				if constexpr (sizeof(v_type) > 2) {
+					if VN_LIKELY (iter < end) {
+						c = static_cast<uint8_t>(*iter);
+						if VN_UNLIKELY (static_cast<uint64_t>(value) > static_cast<uint64_t>(comp_vals<v_type, negative>[c])) {
+							while (++iter < end && vn_is_digit(static_cast<uint8_t>(*iter))) {
+							}
+							return iter;
+						}
+						value = static_cast<v_type_local>(value * 10 + (c - zero));
+						++iter;
+					} else {
+						if constexpr (negative) {
+							value_new = static_cast<v_type>(zero_val - value);
+						} else {
+							value_new = static_cast<v_type>(value);
+						}
+						return iter;
+					}
+
+					if VN_LIKELY (iter < end) {
+						c = static_cast<uint8_t>(*iter);
+						if VN_UNLIKELY (static_cast<uint64_t>(value) > static_cast<uint64_t>(comp_vals<v_type, negative>[c])) {
+							while (++iter < end && vn_is_digit(static_cast<uint8_t>(*iter))) {
+							}
+							return iter;
+						}
+						value = static_cast<v_type_local>(value * 10 + (c - zero));
+						++iter;
+					} else {
+						if constexpr (negative) {
+							value_new = static_cast<v_type>(zero_val - value);
+						} else {
+							value_new = static_cast<v_type>(value);
+						}
+						return iter;
+					}
+
+					if VN_LIKELY (iter < end) {
+						c = static_cast<uint8_t>(*iter);
+						if VN_UNLIKELY (static_cast<uint64_t>(value) > static_cast<uint64_t>(comp_vals<v_type, negative>[c])) {
+							while (++iter < end && vn_is_digit(static_cast<uint8_t>(*iter))) {
+							}
+							return iter;
+						}
+						value = static_cast<v_type_local>(value * 10 + (c - zero));
+						++iter;
+					} else {
+						if constexpr (negative) {
+							value_new = static_cast<v_type>(zero_val - value);
+						} else {
+							value_new = static_cast<v_type>(value);
+						}
+						return iter;
+					}
+
+					if VN_LIKELY (iter < end) {
+						c = static_cast<uint8_t>(*iter);
+						if VN_UNLIKELY (static_cast<uint64_t>(value) > static_cast<uint64_t>(comp_vals<v_type, negative>[c])) {
+							while (++iter < end && vn_is_digit(static_cast<uint8_t>(*iter))) {
+							}
+							return iter;
+						}
+						value = static_cast<v_type_local>(value * 10 + (c - zero));
+						++iter;
+					} else {
+						if constexpr (negative) {
+							value_new = static_cast<v_type>(zero_val - value);
+						} else {
+							value_new = static_cast<v_type>(value);
+						}
+						return iter;
+					}
+
+					if VN_LIKELY (iter < end) {
+						c = static_cast<uint8_t>(*iter);
+						if VN_UNLIKELY (static_cast<uint64_t>(value) > static_cast<uint64_t>(comp_vals<v_type, negative>[c])) {
+							while (++iter < end && vn_is_digit(static_cast<uint8_t>(*iter))) {
+							}
+							return iter;
+						}
+						value = static_cast<v_type_local>(value * 10 + (c - zero));
+						++iter;
+					} else {
+						if constexpr (negative) {
+							value_new = static_cast<v_type>(zero_val - value);
+						} else {
+							value_new = static_cast<v_type>(value);
+						}
+						return iter;
+					}
+
+					if constexpr (sizeof(v_type) > 4) {
+						if VN_LIKELY (iter < end) {
+							c = static_cast<uint8_t>(*iter);
+							if VN_UNLIKELY (static_cast<uint64_t>(value) > static_cast<uint64_t>(comp_vals<v_type, negative>[c])) {
+								while (++iter < end && vn_is_digit(static_cast<uint8_t>(*iter))) {
+								}
+								return iter;
+							}
+							value = static_cast<v_type_local>(value * 10 + (c - zero));
+							++iter;
+						} else {
+							if constexpr (negative) {
+								value_new = static_cast<v_type>(zero_val - value);
+							} else {
+								value_new = static_cast<v_type>(value);
+							}
+							return iter;
+						}
+
+						if VN_LIKELY (iter < end) {
+							c = static_cast<uint8_t>(*iter);
+							if VN_UNLIKELY (static_cast<uint64_t>(value) > static_cast<uint64_t>(comp_vals<v_type, negative>[c])) {
+								while (++iter < end && vn_is_digit(static_cast<uint8_t>(*iter))) {
+								}
+								return iter;
+							}
+							value = static_cast<v_type_local>(value * 10 + (c - zero));
+							++iter;
+						} else {
+							if constexpr (negative) {
+								value_new = static_cast<v_type>(zero_val - value);
+							} else {
+								value_new = static_cast<v_type>(value);
+							}
+							return iter;
+						}
+
+						if VN_LIKELY (iter < end) {
+							c = static_cast<uint8_t>(*iter);
+							if VN_UNLIKELY (static_cast<uint64_t>(value) > static_cast<uint64_t>(comp_vals<v_type, negative>[c])) {
+								while (++iter < end && vn_is_digit(static_cast<uint8_t>(*iter))) {
+								}
+								return iter;
+							}
+							value = static_cast<v_type_local>(value * 10 + (c - zero));
+							++iter;
+						} else {
+							if constexpr (negative) {
+								value_new = static_cast<v_type>(zero_val - value);
+							} else {
+								value_new = static_cast<v_type>(value);
+							}
+							return iter;
+						}
+
+						if VN_LIKELY (iter < end) {
+							c = static_cast<uint8_t>(*iter);
+							if VN_UNLIKELY (static_cast<uint64_t>(value) > static_cast<uint64_t>(comp_vals<v_type, negative>[c])) {
+								while (++iter < end && vn_is_digit(static_cast<uint8_t>(*iter))) {
+								}
+								return iter;
+							}
+							value = static_cast<v_type_local>(value * 10 + (c - zero));
+							++iter;
+						} else {
+							if constexpr (negative) {
+								value_new = static_cast<v_type>(zero_val - value);
+							} else {
+								value_new = static_cast<v_type>(value);
+							}
+							return iter;
+						}
+
+						if VN_LIKELY (iter < end) {
+							c = static_cast<uint8_t>(*iter);
+							if VN_UNLIKELY (static_cast<uint64_t>(value) > static_cast<uint64_t>(comp_vals<v_type, negative>[c])) {
+								while (++iter < end && vn_is_digit(static_cast<uint8_t>(*iter))) {
+								}
+								return iter;
+							}
+							value = static_cast<v_type_local>(value * 10 + (c - zero));
+							++iter;
+						} else {
+							if constexpr (negative) {
+								value_new = static_cast<v_type>(zero_val - value);
+							} else {
+								value_new = static_cast<v_type>(value);
+							}
+							return iter;
+						}
+
+						if VN_LIKELY (iter < end) {
+							c = static_cast<uint8_t>(*iter);
+							if VN_UNLIKELY (static_cast<uint64_t>(value) > static_cast<uint64_t>(comp_vals<v_type, negative>[c])) {
+								while (++iter < end && vn_is_digit(static_cast<uint8_t>(*iter))) {
+								}
+								return iter;
+							}
+							value = static_cast<v_type_local>(value * 10 + (c - zero));
+							++iter;
+						} else {
+							if constexpr (negative) {
+								value_new = static_cast<v_type>(zero_val - value);
+							} else {
+								value_new = static_cast<v_type>(value);
+							}
+							return iter;
+						}
+
+						if VN_LIKELY (iter < end) {
+							c = static_cast<uint8_t>(*iter);
+							if VN_UNLIKELY (static_cast<uint64_t>(value) > static_cast<uint64_t>(comp_vals<v_type, negative>[c])) {
+								while (++iter < end && vn_is_digit(static_cast<uint8_t>(*iter))) {
+								}
+								return iter;
+							}
+							value = static_cast<v_type_local>(value * 10 + (c - zero));
+							++iter;
+						} else {
+							if constexpr (negative) {
+								value_new = static_cast<v_type>(zero_val - value);
+							} else {
+								value_new = static_cast<v_type>(value);
+							}
+							return iter;
+						}
+
+						if VN_LIKELY (iter < end) {
+							c = static_cast<uint8_t>(*iter);
+							if VN_UNLIKELY (static_cast<uint64_t>(value) > static_cast<uint64_t>(comp_vals<v_type, negative>[c])) {
+								while (++iter < end && vn_is_digit(static_cast<uint8_t>(*iter))) {
+								}
+								return iter;
+							}
+							value = static_cast<v_type_local>(value * 10 + (c - zero));
+							++iter;
+						} else {
+							if constexpr (negative) {
+								value_new = static_cast<v_type>(zero_val - value);
+							} else {
+								value_new = static_cast<v_type>(value);
+							}
+							return iter;
+						}
+
+						if VN_LIKELY (iter < end) {
+							c = static_cast<uint8_t>(*iter);
+							if VN_UNLIKELY (static_cast<uint64_t>(value) > static_cast<uint64_t>(comp_vals<v_type, negative>[c])) {
+								while (++iter < end && vn_is_digit(static_cast<uint8_t>(*iter))) {
+								}
+								return iter;
+							}
+							value = static_cast<v_type_local>(value * 10 + (c - zero));
+							++iter;
+						} else {
+							if constexpr (negative) {
+								value_new = static_cast<v_type>(zero_val - value);
+							} else {
+								value_new = static_cast<v_type>(value);
+							}
+							return iter;
+						}
+
+						if constexpr (uint_types<v_type>) {
+							if VN_LIKELY (iter < end) {
+								c = static_cast<uint8_t>(*iter);
+								if VN_UNLIKELY (static_cast<uint64_t>(value) > static_cast<uint64_t>(comp_vals<v_type, negative>[c])) {
+									while (++iter < end && vn_is_digit(static_cast<uint8_t>(*iter))) {
+									}
+									return iter;
+								}
+								value = static_cast<v_type_local>(value * 10 + (c - zero));
+								++iter;
+							} else {
+								if constexpr (negative) {
+									value_new = static_cast<v_type>(zero_val - value);
+								} else {
+									value_new = static_cast<v_type>(value);
+								}
+								return iter;
+							}
+						}
+					}
+				}
+			}
+
+			if VN_LIKELY (iter < end) {
+				c = static_cast<uint8_t>(*iter);
+				if VN_UNLIKELY (static_cast<uint64_t>(value) > static_cast<uint64_t>(comp_vals<v_type, negative>[c])) {
+					while (++iter < end && vn_is_digit(static_cast<uint8_t>(*iter))) {
+					}
+					return iter;
+				}
+				value = static_cast<v_type_local>(value * 10 + (c - zero));
+				++iter;
 			} else {
 				if constexpr (negative) {
 					value_new = static_cast<v_type>(zero_val - value);

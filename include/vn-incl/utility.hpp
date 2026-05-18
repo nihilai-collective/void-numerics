@@ -10,6 +10,26 @@ namespace vn {
 
 	namespace detail {
 
+		template<vn::detail::integer_types v_type> struct max_digits {
+		  private:
+			using limits = std::numeric_limits<v_type>;
+			using U		 = std::make_unsigned_t<v_type>;
+
+			static consteval uint64_t count_digits(U value_new) {
+				uint64_t digits = 0;
+				do {
+					value_new /= 10;
+					++digits;
+				} while (value_new != 0);
+				return digits;
+			}
+
+		  public:
+			static constexpr uint64_t value = count_digits(static_cast<U>(limits::max()));
+		};
+
+		template<vn::detail::integer_types v_type> static constexpr uint64_t max_digits_v = max_digits<v_type>::value;
+
 		template<uint8_types auto repeat, uint_types v_type> static constexpr uint64_t repeat_bytes_v = static_cast<v_type>(0x0101010101010101ull) * static_cast<v_type>(repeat);
 
 		template<bool negative> static constexpr uint64_t comp_val_addition{ [] {
@@ -66,19 +86,7 @@ namespace vn {
 
 		VN_ALIGN(64) inline constexpr char zero{ '0' };
 
-		template<std::endian, uint64_t size = 0> struct int_tables_impl;
-
-		template<std::endian endianity> struct int_tables_impl<endianity, 1> {
-			static constexpr std::array<char, 10> gen() {
-				std::array<char, 10> t{};
-				for (uint32_t i = 0; i < 10; ++i) {
-					t[i] = static_cast<char>('0' + i);
-				}
-				return t;
-			}
-			VN_ALIGN(64) static constexpr std::array<char, 10> table{ gen() };
-			VN_ALIGN(64) static constexpr const char* __restrict values{ table.data() };
-		};
+		template<std::endian, uint64_t size = 0> struct int_tables_impl {};
 
 		template<uint64_t size> struct char_array {
 			VN_FORCE_INLINE operator const char*() const VN_LIFETIME_BOUND {

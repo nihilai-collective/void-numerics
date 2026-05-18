@@ -1,10 +1,11 @@
 ﻿// SPDX-License-Identifier: MIT
 // Copyright (c) 2026 Nihilai Collective Corp
+// src/benchmarks/void-numerics.cpp
 
 #include "i_to_str.hpp"
 #include "str_to_i.hpp"
 
-static constexpr uint64_t total_iterations{ 30 };
+static constexpr uint64_t total_iterations{ 300 };
 static constexpr uint64_t measured_iterations{ 10 };
 
 int32_t main() {

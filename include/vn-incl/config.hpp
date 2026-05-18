@@ -31,7 +31,8 @@
 	#define VN_PLATFORM_LINUX 0
 	#define VN_PLATFORM_MACOS 0
 #elif defined(__APPLE__) || defined(__MACH__)
-	#if TARGET_OS_MAC
+	#include <TargetConditionals.h>
+	#if defined(TARGET_OS_MAC) && TARGET_OS_MAC
 		#define VN_PLATFORM_WINDOWS 0
 		#define VN_PLATFORM_LINUX 0
 		#define VN_PLATFORM_MACOS 1
@@ -50,51 +51,38 @@
 	#define VN_PLATFORM_MACOS 0
 #endif
 
-#define VN_ALIGN(x) alignas(x)
-
-#if VN_COMPILER_MSVC
-	#pragma warning(push)
-	#pragma warning(disable : 4324)
+#if !defined(VN_DEBUG)
+	#define VN_DEBUG 0
 #endif
+
+#define VN_ALIGN(x) alignas(x)
 
 #if VN_DEBUG
 	#if VN_COMPILER_MSVC
-		#define VN_FORCE_INLINE [[msvc::noinline]]
-		#define VN_FORCE_NOINLINE [[msvc::noinline]]
+		#define VN_FORCE_INLINE inline [[msvc::noinline]]
 	#elif VN_COMPILER_GNU || VN_COMPILER_CLANG
-		#define VN_FORCE_INLINE __attribute__((noinline))
-		#define VN_FORCE_NOINLINE __attribute__((noinline))
+		#define VN_FORCE_INLINE inline __attribute__((noinline))
 	#else
-		#define VN_FORCE_INLINE
-		#define VN_FORCE_NOINLINE
+		#define VN_FORCE_INLINE inline
 	#endif
 #else
 	#if VN_COMPILER_MSVC
 		#define VN_FORCE_INLINE [[msvc::forceinline]]
-		#define VN_FORCE_NOINLINE [[msvc::noinline]]
 	#elif VN_COMPILER_GNU || VN_COMPILER_CLANG
 		#define VN_FORCE_INLINE inline __attribute__((always_inline))
-		#define VN_FORCE_NOINLINE __attribute__((noinline))
 	#else
 		#define VN_FORCE_INLINE inline
-		#define VN_FORCE_NOINLINE
 	#endif
 #endif
 
 #if !defined(VN_LIKELY)
 	#define VN_LIKELY(...) (__VA_ARGS__) [[likely]]
 #endif
-
 #if !defined(VN_UNLIKELY)
 	#define VN_UNLIKELY(...) (__VA_ARGS__) [[unlikely]]
 #endif
-
 #if !defined(VN_ELSE_UNLIKELY)
 	#define VN_ELSE_UNLIKELY(...) __VA_ARGS__ [[unlikely]]
-#endif
-
-#if !defined VN_ALIGN
-	#define VN_ALIGN(b) alignas(b)
 #endif
 
 #include <concepts>
