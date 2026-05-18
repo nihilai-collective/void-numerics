@@ -167,7 +167,8 @@ vcpkg_install_copyright(FILE_LIST "${SOURCE_PATH}/License.md")
       "host": true
     }
   ]
-}';
+}
+';
         echo GREEN . "Writing portfile...\n" . WHITE;
         $vcpkgDir = './vcpkg/ports/void-numerics';
         if (!is_dir($vcpkgDir)) {

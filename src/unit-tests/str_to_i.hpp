@@ -45,7 +45,172 @@ namespace vn_from_chars_tests {
 		return r.ptr == s + std::strlen(s);
 	}
 
+	template<typename v_type> struct parse_result {
+		v_type value{};
+		std::ptrdiff_t consumed{};
+		std::errc ec{};
+		bool operator==(const parse_result& o) const noexcept {
+			return value == o.value && consumed == o.consumed;
+		}
+	};
+
+	template<typename v_type> inline parse_result<v_type> ref_parse(const char* s, std::size_t n) {
+		v_type v{};
+		auto r = std::from_chars(s, s + n, v);
+		return { v, r.ptr - s, r.ec };
+	}
+
+	template<typename v_type> inline parse_result<v_type> vn_parse(const char* s, std::size_t n) {
+		v_type v{};
+		auto r = vn::from_chars(s, s + n, v);
+		return { v, r.ptr - s, r.ec };
+	}
+
+	template<typename v_type> inline bool agree(const std::string& s) {
+		return ref_parse<v_type>(s.data(), s.size()) == vn_parse<v_type>(s.data(), s.size());
+	}
+
+	template<typename v_type> inline std::string digits_of(v_type v) {
+		char buf[32]{};
+		auto r = std::to_chars(buf, buf + 32, v);
+		return std::string(buf, r.ptr);
+	}
+
+	inline std::string increment_decimal(std::string s) {
+		bool negative  = !s.empty() && s.front() == '-';
+		std::size_t lo = negative ? 1 : 0;
+		uint64_t carry = 1;
+		for (std::size_t i = s.size(); i-- > lo;) {
+			uint64_t d = static_cast<uint64_t>(s[i] - '0') + carry;
+			s[i]	   = static_cast<char>('0' + (d % 10));
+			carry	   = d / 10;
+			if (!carry)
+				break;
+		}
+		if (carry)
+			s.insert(s.begin() + static_cast<std::ptrdiff_t>(lo), '1');
+		return s;
+	}
+
 	template<rt_ut::string_literal name, vn::detail::integer_types v_type> void test_function() {
+		rt_ut::unit_test<name + "-overflow max plus one", true>::assert_eq(true, [] {
+			return agree<v_type>(increment_decimal(digits_of(std::numeric_limits<v_type>::max())));
+		});
+
+		rt_ut::unit_test<name + "-overflow max plus one trailing junk", true>::assert_eq(true, [] {
+			return agree<v_type>(increment_decimal(digits_of(std::numeric_limits<v_type>::max())) + "xyz");
+		});
+
+		rt_ut::unit_test<name + "-overflow all nines at max width", true>::assert_eq(true, [] {
+			std::string s(digits_of(std::numeric_limits<v_type>::max()).size(), '9');
+			return agree<v_type>(s);
+		});
+
+		rt_ut::unit_test<name + "-overflow all nines one past max width", true>::assert_eq(true, [] {
+			std::string s(digits_of(std::numeric_limits<v_type>::max()).size() + 1, '9');
+			return agree<v_type>(s);
+		});
+
+		rt_ut::unit_test<name + "-overflow leading digit one too big", true>::assert_eq(true, [] {
+			std::string s = digits_of(std::numeric_limits<v_type>::max());
+			if (s.front() < '9') {
+				s.front() = static_cast<char>(s.front() + 1);
+				return agree<v_type>(s);
+			}
+			return true;
+		});
+
+		rt_ut::unit_test<name + "-overflow far above max", true>::assert_eq(true, [] {
+			std::string s(digits_of(std::numeric_limits<v_type>::max()).size() + 6, '7');
+			return agree<v_type>(s);
+		});
+
+		rt_ut::unit_test<name + "-overflow leading zeros then over max", true>::assert_eq(true, [] {
+			for (uint64_t z = 1; z <= 20; ++z) {
+				std::string s(static_cast<std::size_t>(z), '0');
+				s += increment_decimal(digits_of(std::numeric_limits<v_type>::max()));
+				if (!agree<v_type>(s))
+					return false;
+			}
+			return true;
+		});
+
+		rt_ut::unit_test<name + "-overflow fuzz around max", true>::assert_eq(true, [] {
+			std::mt19937_64 rng{ 0x9E3779B97F4A7C15ull ^ name.size() ^ sizeof(v_type) };
+			const std::string max_s = digits_of(std::numeric_limits<v_type>::max());
+			const std::size_t w		= max_s.size();
+			std::uniform_int_distribution<uint64_t> digit{ 0, 9 };
+			std::uniform_int_distribution<uint64_t> width{ static_cast<uint64_t>(w == 0 ? 1 : w - 1), static_cast<uint64_t>(w + 2) };
+			for (uint64_t iter = 0; iter < 2000000; ++iter) {
+				uint64_t len = width(rng);
+				if (len < 1)
+					len = 1;
+				std::string s;
+				s.reserve(static_cast<std::size_t>(len));
+				s.push_back(static_cast<char>('1' + (digit(rng) % 9)));
+				for (uint64_t i = 1; i < len; ++i)
+					s.push_back(static_cast<char>('0' + digit(rng)));
+				if (!agree<v_type>(s))
+					return false;
+			}
+			return true;
+		});
+
+		if constexpr (vn::detail::int_types<v_type>) {
+			rt_ut::unit_test<name + "-overflow min minus one", true>::assert_eq(true, [] {
+				return agree<v_type>(increment_decimal(digits_of(std::numeric_limits<v_type>::min())));
+			});
+
+			rt_ut::unit_test<name + "-overflow negative all nines one past width", true>::assert_eq(true, [] {
+				std::string s = "-";
+				s.append(digits_of(std::numeric_limits<v_type>::max()).size() + 1, '9');
+				return agree<v_type>(s);
+			});
+
+			rt_ut::unit_test<name + "-overflow negative far below min", true>::assert_eq(true, [] {
+				std::string s = "-";
+				s.append(digits_of(std::numeric_limits<v_type>::max()).size() + 6, '7');
+				return agree<v_type>(s);
+			});
+
+			rt_ut::unit_test<name + "-overflow fuzz around min", true>::assert_eq(true, [] {
+				std::mt19937_64 rng{ 0xD1B54A32D192ED03ull ^ name.size() ^ sizeof(v_type) };
+				const std::size_t w = digits_of(std::numeric_limits<v_type>::min()).size();
+				std::uniform_int_distribution<uint64_t> digit{ 0, 9 };
+				std::uniform_int_distribution<uint64_t> width{ static_cast<uint64_t>(w == 0 ? 2 : w - 1), static_cast<uint64_t>(w + 2) };
+				for (uint64_t iter = 0; iter < 2000000; ++iter) {
+					uint64_t len = width(rng);
+					if (len < 2)
+						len = 2;
+					std::string s = "-";
+					s.push_back(static_cast<char>('1' + (digit(rng) % 9)));
+					for (uint64_t i = 1; i < len - 1; ++i)
+						s.push_back(static_cast<char>('0' + digit(rng)));
+					if (!agree<v_type>(s))
+						return false;
+				}
+				return true;
+			});
+		}
+
+		rt_ut::unit_test<"from_chars deep leading-zero run preserves value", true>::assert_eq(true, [] {
+			for (uint64_t n_zeros = 1; n_zeros <= 25; ++n_zeros) {
+				for (uint64_t v: { 5ull, 42ull, 1000ull, 9999ull, 123456789ull }) {
+					std::string s(n_zeros, '0');
+					char tmp[24];
+					auto e = std::to_chars(tmp, tmp + 24, v);
+					s.append(tmp, e.ptr);
+					uint64_t ref{}, got{};
+					std::from_chars(s.data(), s.data() + s.size(), ref);
+					vn::from_chars(s.data(), s.data() + s.size(), got);
+					if (ref != got)
+						return false;
+				}
+			}
+			return true;
+		});
+
+
 		rt_ut::unit_test<name + "-from_chars zero", true>::assert_eq(ref_val<v_type>("0"), [] {
 			return vn_val<v_type>("0");
 		});
@@ -90,7 +255,7 @@ namespace vn_from_chars_tests {
 		rt_ut::unit_test<name + "-from_chars powers of 10", true>::assert_eq(true, [] {
 			char buf[32]{};
 			v_type p = 1;
-			for (uint32_t i = 0; i < unit_tests::max_digits_v<v_type>; ++i) {
+			for (uint32_t i = 0; i < vn::detail::max_digits_v<v_type>; ++i) {
 				auto r = std::to_chars(buf, buf + 32, p);
 				*r.ptr = '\0';
 				if (ref_val<v_type>(buf) != vn_val<v_type>(buf))
@@ -105,7 +270,7 @@ namespace vn_from_chars_tests {
 		rt_ut::unit_test<name + "-from_chars all digit lengths at 111...1", true>::assert_eq(true, [] {
 			char buf[32]{};
 			v_type p = 0;
-			for (uint32_t i = 0; i < unit_tests::max_digits_v<v_type>; ++i) {
+			for (uint32_t i = 0; i < vn::detail::max_digits_v<v_type>; ++i) {
 				p	   = static_cast<v_type>(p * 10 + 1);
 				auto r = std::to_chars(buf, buf + 32, p);
 				*r.ptr = '\0';
@@ -118,7 +283,7 @@ namespace vn_from_chars_tests {
 		rt_ut::unit_test<name + "-from_chars all digit lengths at 999...9", true>::assert_eq(true, [] {
 			char buf[32]{};
 			v_type p = 0;
-			for (uint32_t i = 0; i < unit_tests::max_digits_v<v_type>; ++i) {
+			for (uint32_t i = 0; i < vn::detail::max_digits_v<v_type>; ++i) {
 				p	   = static_cast<v_type>(p * 10 + 9);
 				auto r = std::to_chars(buf, buf + 32, p);
 				*r.ptr = '\0';
@@ -259,7 +424,7 @@ namespace vn_from_chars_tests {
 			rt_ut::unit_test<name + "-from_chars negative powers of 10", true>::assert_eq(true, [] {
 				char buf[32]{};
 				v_type p = -1;
-				for (uint32_t i = 0; i < unit_tests::max_digits_v<v_type>; ++i) {
+				for (uint32_t i = 0; i < vn::detail::max_digits_v<v_type>; ++i) {
 					auto r = std::to_chars(buf, buf + 32, p);
 					*r.ptr = '\0';
 					if (ref_val<v_type>(buf) != vn_val<v_type>(buf))
@@ -274,7 +439,7 @@ namespace vn_from_chars_tests {
 			rt_ut::unit_test<name + "-from_chars negative all digit lengths at -111...1", true>::assert_eq(true, [] {
 				char buf[32]{};
 				v_type p = 0;
-				for (uint32_t i = 0; i < unit_tests::max_digits_v<v_type>; ++i) {
+				for (uint32_t i = 0; i < vn::detail::max_digits_v<v_type>; ++i) {
 					p	   = static_cast<v_type>(p * 10 - 1);
 					auto r = std::to_chars(buf, buf + 32, p);
 					*r.ptr = '\0';
@@ -343,7 +508,9 @@ namespace vn_from_chars_tests {
 	}
 }
 
-template<> struct unit_tests::tests<vn::detail::conversion_classes::str_to_i> {
+template<vn::detail::conversion_classes> struct tests;
+
+template<> struct tests<vn::detail::conversion_classes::str_to_i> {
 	static void impl() {
 		vn_from_chars_tests::test_function<"uint8", uint8_t>();
 		vn_from_chars_tests::test_function<"int8", int8_t>();

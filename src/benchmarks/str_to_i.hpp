@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: MIT
 // Copyright (c) 2026 Nihilai Collective Corp
+// src/benchmarks/str_to_i.hpp
 
 #pragma once
 
@@ -18,7 +19,7 @@ namespace str_to_i_tests {
 
 	template<typename v_type_new> struct string_entry {
 		using v_type = v_type_new;
-		char buf[benchmarks::max_digits_v<v_type> + 1]{};
+		char buf[vn::detail::max_digits_v<v_type> + 1]{};
 		uint8_t len{};
 		v_type expected{};
 	};
@@ -36,7 +37,7 @@ namespace str_to_i_tests {
 				if constexpr (vn::detail::int_types<int_type>) {
 					value *= negative ? zrg_neg.impl() ? -1 : 1 : 1;
 				}
-				char* end  = std::to_chars(e.buf, e.buf + benchmarks::max_digits_v<int_type> + 1, value).ptr;
+				char* end  = std::to_chars(e.buf, e.buf + vn::detail::max_digits_v<int_type> + 1, value).ptr;
 				e.len	   = static_cast<uint8_t>(end - e.buf);
 				e.expected = value;
 			}
@@ -90,7 +91,7 @@ namespace str_to_i_tests {
 	struct verify_correctness {
 		template<typename int_type> static void impl(const std::vector<string_entry<int_type>>& test_data, const char* test_label) {
 			uint64_t vn_correct{}, vn_incorrect{};
-			uint64_t strto_correct{}, strto_incorrect{}, total_incorrect{};
+			uint64_t strto_incorrect{}, total_incorrect{};
 			int_type first_bad_value{};
 			bool found_bad{ false };
 			for (uint64_t x = 0; x < test_data.size(); ++x) {
@@ -113,12 +114,10 @@ namespace str_to_i_tests {
 						found_bad		= true;
 					}
 				}
-				if (strto_result == e.expected) {
-					++strto_correct;
-				} else {
+				if (strto_result != e.expected) {
 					++strto_incorrect;
 					++total_incorrect;
-				}
+				} 
 			}
 			if (total_incorrect > 0) {
 				std::cout << "[" << test_label << "] vn correct: " << vn_correct << " | incorrect: " << vn_incorrect << " | strto incorrect: " << strto_incorrect << std::endl;
@@ -133,7 +132,7 @@ namespace str_to_i_tests {
 
 	template<typename v_type_new> struct leading_zero_string_entry {
 		using v_type = v_type_new;
-		char buf[benchmarks::max_digits_v<v_type> + max_leading_zeros + 2]{};
+		char buf[vn::detail::max_digits_v<v_type> + max_leading_zeros + 2]{};
 		uint8_t len{};
 		v_type expected{};
 	};
@@ -179,7 +178,7 @@ namespace str_to_i_tests {
 	struct verify_correctness_leading_zeros {
 		template<typename int_type> static void impl(const std::vector<leading_zero_string_entry<int_type>>& test_data, const char* test_label) {
 			uint64_t vn_correct{}, vn_incorrect{};
-			uint64_t strto_correct{}, strto_incorrect{}, total_incorrect{};
+			uint64_t strto_incorrect{}, total_incorrect{};
 			int_type first_bad_value{};
 			bool found_bad{ false };
 			for (const auto& e: test_data) {
@@ -201,12 +200,10 @@ namespace str_to_i_tests {
 						found_bad		= true;
 					}
 				}
-				if (strto_result == e.expected) {
-					++strto_correct;
-				} else {
+				if (strto_result != e.expected) {
 					++strto_incorrect;
 					++total_incorrect;
-				}
+				} 
 			}
 			if (total_incorrect > 0) {
 				std::cout << "[" << test_label << "] vn correct: " << vn_correct << " | incorrect: " << vn_incorrect << " | strto incorrect: " << strto_incorrect << std::endl;

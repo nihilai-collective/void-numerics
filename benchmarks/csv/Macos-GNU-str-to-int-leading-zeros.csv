@@ -1,0 +1,8 @@
+# void-numerics Benchmark Results  
+**Platform:** Apple M1 (Virtual)  
+**OS:** Darwin 24.6.0  
+**Compiler:** GNU 15.2.0  
+Library,Wins,Ties,Losses
+vn::from_chars,43,4,1
+std::from_chars,1,3,44
+strtoll/strtoull,0,3,45

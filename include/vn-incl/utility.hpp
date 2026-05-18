@@ -10,6 +10,26 @@ namespace vn {
 
 	namespace detail {
 
+		template<vn::detail::integer_types v_type> struct max_digits {
+		  private:
+			using limits = std::numeric_limits<v_type>;
+			using U		 = std::make_unsigned_t<v_type>;
+
+			static consteval uint64_t count_digits(U value_new) {
+				uint64_t digits = 0;
+				do {
+					value_new /= 10;
+					++digits;
+				} while (value_new != 0);
+				return digits;
+			}
+
+		  public:
+			static constexpr uint64_t value = count_digits(static_cast<U>(limits::max()));
+		};
+
+		template<vn::detail::integer_types v_type> static constexpr uint64_t max_digits_v = max_digits<v_type>::value;
+
 		template<uint8_types auto repeat, uint_types v_type> static constexpr uint64_t repeat_bytes_v = static_cast<v_type>(0x0101010101010101ull) * static_cast<v_type>(repeat);
 
 		template<bool negative> static constexpr uint64_t comp_val_addition{ [] {
@@ -60,25 +80,13 @@ namespace vn {
 
 		template<typename v_type, bool negative> VN_ALIGN(64) static constexpr const std::make_unsigned_t<v_type>* __restrict comp_vals{ raw_comp_vals<v_type, negative>.data() };
 
+		VN_ALIGN(64) inline constexpr uint8_t zero{ static_cast<uint8_t>('0') };
+
 		template<uint8_types v_type> VN_FORCE_INLINE static constexpr bool is_digit(v_type c) noexcept {
-			return c - static_cast<uint8_t>('0') < 10;
+			return c - static_cast<uint8_t>(zero) < 10;
 		}
 
-		VN_ALIGN(64) inline constexpr char zero{ '0' };
-
-		template<std::endian, uint64_t size = 0> struct int_tables_impl;
-
-		template<std::endian endianity> struct int_tables_impl<endianity, 1> {
-			static constexpr std::array<char, 10> gen() {
-				std::array<char, 10> t{};
-				for (uint32_t i = 0; i < 10; ++i) {
-					t[i] = static_cast<char>('0' + i);
-				}
-				return t;
-			}
-			VN_ALIGN(64) static constexpr std::array<char, 10> table{ gen() };
-			VN_ALIGN(64) static constexpr const char* __restrict values{ table.data() };
-		};
+		template<std::endian, uint64_t size = 0> struct int_tables_impl {};
 
 		template<uint64_t size> struct char_array {
 			VN_FORCE_INLINE operator const char*() const VN_LIFETIME_BOUND {
@@ -95,11 +103,11 @@ namespace vn {
 			std::array<uint16_t, 100> t{};
 			for (uint32_t i = 0; i < 100; ++i) {
 				if constexpr (endianness == std::endian::little) {
-					t[i] |= static_cast<uint16_t>('0' + (i / 10));
-					t[i] |= static_cast<uint16_t>('0' + (i % 10)) << 8;
+					t[i] |= static_cast<uint16_t>(zero + (i / 10));
+					t[i] |= static_cast<uint16_t>(zero + (i % 10)) << 8;
 				} else {
-					t[i] |= static_cast<uint16_t>('0' + (i / 10)) << 8;
-					t[i] |= static_cast<uint16_t>('0' + (i % 10));
+					t[i] |= static_cast<uint16_t>(zero + (i / 10)) << 8;
+					t[i] |= static_cast<uint16_t>(zero + (i % 10));
 				}
 			}
 			return t;
@@ -109,13 +117,13 @@ namespace vn {
 			std::array<char_array<3>, 1000> t{};
 			for (uint32_t i = 0; i < 1000; ++i) {
 				if constexpr (endianness == std::endian::little) {
-					t[i][0] = static_cast<char>('0' + (i / 100));
-					t[i][1] = static_cast<char>('0' + (i / 10 % 10));
-					t[i][2] = static_cast<char>('0' + (i % 10));
+					t[i][0] = static_cast<char>(zero + (i / 100));
+					t[i][1] = static_cast<char>(zero + (i / 10 % 10));
+					t[i][2] = static_cast<char>(zero + (i % 10));
 				} else {
-					t[i][2] = static_cast<char>('0' + (i / 100));
-					t[i][1] = static_cast<char>('0' + (i / 10 % 10));
-					t[i][0] = static_cast<char>('0' + (i % 10));
+					t[i][2] = static_cast<char>(zero + (i / 100));
+					t[i][1] = static_cast<char>(zero + (i / 10 % 10));
+					t[i][0] = static_cast<char>(zero + (i % 10));
 				}
 			}
 			return t;
@@ -125,15 +133,15 @@ namespace vn {
 			std::array<uint32_t, 10000> t{};
 			for (uint32_t i = 0; i < 10000; ++i) {
 				if constexpr (endianness == std::endian::little) {
-					t[i] |= static_cast<uint32_t>('0' + (i / 1000));
-					t[i] |= static_cast<uint32_t>('0' + (i / 100 % 10)) << 8;
-					t[i] |= static_cast<uint32_t>('0' + (i / 10 % 10)) << 16;
-					t[i] |= static_cast<uint32_t>('0' + (i % 10)) << 24;
+					t[i] |= static_cast<uint32_t>(zero + (i / 1000));
+					t[i] |= static_cast<uint32_t>(zero + (i / 100 % 10)) << 8;
+					t[i] |= static_cast<uint32_t>(zero + (i / 10 % 10)) << 16;
+					t[i] |= static_cast<uint32_t>(zero + (i % 10)) << 24;
 				} else {
-					t[i] |= static_cast<uint32_t>('0' + (i / 1000)) << 24;
-					t[i] |= static_cast<uint32_t>('0' + (i / 100 % 10)) << 16;
-					t[i] |= static_cast<uint32_t>('0' + (i / 10 % 10)) << 8;
-					t[i] |= static_cast<uint32_t>('0' + (i % 10));
+					t[i] |= static_cast<uint32_t>(zero + (i / 1000)) << 24;
+					t[i] |= static_cast<uint32_t>(zero + (i / 100 % 10)) << 16;
+					t[i] |= static_cast<uint32_t>(zero + (i / 10 % 10)) << 8;
+					t[i] |= static_cast<uint32_t>(zero + (i % 10));
 				}
 			}
 			return t;

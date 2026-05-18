@@ -22,7 +22,7 @@ namespace vn {
 
 		template<> struct first_non_zero_byte<1ULL> {
 			VN_FORCE_INLINE static uint64_t impl(const char* __restrict str) noexcept {
-				return *str == '0';
+				return *str == zero;
 			}
 		};
 
@@ -93,43 +93,35 @@ namespace vn {
 		template<typename v_type> struct from_chars_impl;
 
 		template<uint_types v_type> VN_FORCE_INLINE bool vn_is_digit(v_type value) noexcept {
-			return ((static_cast<uint8_t>(value - '0')) < 10);
+			return ((static_cast<uint8_t>(value - zero)) < 10);
 		}
 
 		VN_FORCE_INLINE static const char* trim_leading_zeros(const char* __restrict iter VN_LIFETIME_BOUND, const char* __restrict end) noexcept {
 			uint64_t length{ static_cast<uint64_t>(end - iter) };
 			switch (length) {
 				case 1: {
-					iter += first_non_zero_byte<1ULL>::impl(iter);
-					return iter;
+					return iter + first_non_zero_byte<1ULL>::impl(iter);
 				}
 				case 2: {
-					iter += first_non_zero_byte<2ULL>::impl(iter);
-					return iter;
+					return iter + first_non_zero_byte<2ULL>::impl(iter);
 				}
 				case 3: {
-					iter += first_non_zero_byte<3ULL>::impl(iter);
-					return iter;
+					return iter + first_non_zero_byte<3ULL>::impl(iter);
 				}
 				case 4: {
-					iter += first_non_zero_byte<4ULL>::impl(iter);
-					return iter;
+					return iter + first_non_zero_byte<4ULL>::impl(iter);
 				}
 				case 5: {
-					iter += first_non_zero_byte<5ULL>::impl(iter);
-					return iter;
+					return iter + first_non_zero_byte<5ULL>::impl(iter);
 				}
 				case 6: {
-					iter += first_non_zero_byte<6ULL>::impl(iter);
-					return iter;
+					return iter + first_non_zero_byte<6ULL>::impl(iter);
 				}
 				case 7: {
-					iter += first_non_zero_byte<7ULL>::impl(iter);
-					return iter;
+					return iter + first_non_zero_byte<7ULL>::impl(iter);
 				}
 				case 8: {
-					iter += first_non_zero_byte<8ULL>::impl(iter);
-					return iter;
+					return iter + first_non_zero_byte<8ULL>::impl(iter);
 				}
 				default: {
 					while (iter + 8 < end && *iter == zero) {
@@ -149,10 +141,19 @@ namespace vn {
 			return iter;
 		}
 
+		template<bool negative, integer_types v_type, integer_types v_type_local> VN_FORCE_INLINE const char* finish(const char* it, v_type& value_new, v_type_local value) {
+			VN_ALIGN(64) static constexpr v_type_local zero_val{ 0 };
+			if constexpr (negative) {
+				value_new = static_cast<v_type>(zero_val - value);
+			} else {
+				value_new = static_cast<v_type>(value);
+			}
+			return it;
+		};
+
 		template<bool negative, integer_types v_type>
 		VN_FORCE_INLINE static const char* parse_integer(v_type& value_new, const char* __restrict iter, const char* __restrict end) noexcept {
 			using v_type_local = std::make_unsigned_t<v_type>;
-			VN_ALIGN(64) static constexpr v_type_local zero_val{ 0 };
 
 			if VN_UNLIKELY (iter >= end) {
 				return iter;
@@ -183,20 +184,10 @@ namespace vn {
 					value = static_cast<v_type_local>(value * 10 + (c - zero));
 					++iter;
 				} else {
-					if constexpr (negative) {
-						value_new = static_cast<v_type>(zero_val - value);
-					} else {
-						value_new = static_cast<v_type>(value);
-					}
-					return iter;
+					return finish<negative>(iter, value_new, value);
 				}
 			} else {
-				if constexpr (negative) {
-					value_new = static_cast<v_type>(zero_val - value);
-				} else {
-					value_new = static_cast<v_type>(value);
-				}
-				return iter;
+				return finish<negative>(iter, value_new, value);
 			}
 
 			if constexpr (sizeof(v_type) > 1) {
@@ -209,12 +200,7 @@ namespace vn {
 						return iter;
 					}
 				} else {
-					if constexpr (negative) {
-						value_new = static_cast<v_type>(zero_val - value);
-					} else {
-						value_new = static_cast<v_type>(value);
-					}
-					return iter;
+					return finish<negative>(iter, value_new, value);
 				}
 
 				if VN_LIKELY (iter < end) {
@@ -226,12 +212,7 @@ namespace vn {
 						return iter;
 					}
 				} else {
-					if constexpr (negative) {
-						value_new = static_cast<v_type>(zero_val - value);
-					} else {
-						value_new = static_cast<v_type>(value);
-					}
-					return iter;
+					return finish<negative>(iter, value_new, value);
 				}
 
 				if constexpr (sizeof(v_type) > 2) {
@@ -244,12 +225,7 @@ namespace vn {
 							return iter;
 						}
 					} else {
-						if constexpr (negative) {
-							value_new = static_cast<v_type>(zero_val - value);
-						} else {
-							value_new = static_cast<v_type>(value);
-						}
-						return iter;
+						return finish<negative>(iter, value_new, value);
 					}
 
 					if VN_LIKELY (iter < end) {
@@ -261,12 +237,7 @@ namespace vn {
 							return iter;
 						}
 					} else {
-						if constexpr (negative) {
-							value_new = static_cast<v_type>(zero_val - value);
-						} else {
-							value_new = static_cast<v_type>(value);
-						}
-						return iter;
+						return finish<negative>(iter, value_new, value);
 					}
 
 					if VN_LIKELY (iter < end) {
@@ -278,12 +249,7 @@ namespace vn {
 							return iter;
 						}
 					} else {
-						if constexpr (negative) {
-							value_new = static_cast<v_type>(zero_val - value);
-						} else {
-							value_new = static_cast<v_type>(value);
-						}
-						return iter;
+						return finish<negative>(iter, value_new, value);
 					}
 
 					if VN_LIKELY (iter < end) {
@@ -295,12 +261,7 @@ namespace vn {
 							return iter;
 						}
 					} else {
-						if constexpr (negative) {
-							value_new = static_cast<v_type>(zero_val - value);
-						} else {
-							value_new = static_cast<v_type>(value);
-						}
-						return iter;
+						return finish<negative>(iter, value_new, value);
 					}
 
 					if VN_LIKELY (iter < end) {
@@ -312,12 +273,7 @@ namespace vn {
 							return iter;
 						}
 					} else {
-						if constexpr (negative) {
-							value_new = static_cast<v_type>(zero_val - value);
-						} else {
-							value_new = static_cast<v_type>(value);
-						}
-						return iter;
+						return finish<negative>(iter, value_new, value);
 					}
 
 					if constexpr (sizeof(v_type) > 4) {
@@ -330,12 +286,7 @@ namespace vn {
 								return iter;
 							}
 						} else {
-							if constexpr (negative) {
-								value_new = static_cast<v_type>(zero_val - value);
-							} else {
-								value_new = static_cast<v_type>(value);
-							}
-							return iter;
+							return finish<negative>(iter, value_new, value);
 						}
 
 						if VN_LIKELY (iter < end) {
@@ -347,12 +298,7 @@ namespace vn {
 								return iter;
 							}
 						} else {
-							if constexpr (negative) {
-								value_new = static_cast<v_type>(zero_val - value);
-							} else {
-								value_new = static_cast<v_type>(value);
-							}
-							return iter;
+							return finish<negative>(iter, value_new, value);
 						}
 
 						if VN_LIKELY (iter < end) {
@@ -364,12 +310,7 @@ namespace vn {
 								return iter;
 							}
 						} else {
-							if constexpr (negative) {
-								value_new = static_cast<v_type>(zero_val - value);
-							} else {
-								value_new = static_cast<v_type>(value);
-							}
-							return iter;
+							return finish<negative>(iter, value_new, value);
 						}
 
 						if VN_LIKELY (iter < end) {
@@ -381,12 +322,7 @@ namespace vn {
 								return iter;
 							}
 						} else {
-							if constexpr (negative) {
-								value_new = static_cast<v_type>(zero_val - value);
-							} else {
-								value_new = static_cast<v_type>(value);
-							}
-							return iter;
+							return finish<negative>(iter, value_new, value);
 						}
 
 						if VN_LIKELY (iter < end) {
@@ -398,12 +334,7 @@ namespace vn {
 								return iter;
 							}
 						} else {
-							if constexpr (negative) {
-								value_new = static_cast<v_type>(zero_val - value);
-							} else {
-								value_new = static_cast<v_type>(value);
-							}
-							return iter;
+							return finish<negative>(iter, value_new, value);
 						}
 
 						if VN_LIKELY (iter < end) {
@@ -415,12 +346,7 @@ namespace vn {
 								return iter;
 							}
 						} else {
-							if constexpr (negative) {
-								value_new = static_cast<v_type>(zero_val - value);
-							} else {
-								value_new = static_cast<v_type>(value);
-							}
-							return iter;
+							return finish<negative>(iter, value_new, value);
 						}
 
 						if VN_LIKELY (iter < end) {
@@ -432,12 +358,7 @@ namespace vn {
 								return iter;
 							}
 						} else {
-							if constexpr (negative) {
-								value_new = static_cast<v_type>(zero_val - value);
-							} else {
-								value_new = static_cast<v_type>(value);
-							}
-							return iter;
+							return finish<negative>(iter, value_new, value);
 						}
 
 						if VN_LIKELY (iter < end) {
@@ -449,12 +370,7 @@ namespace vn {
 								return iter;
 							}
 						} else {
-							if constexpr (negative) {
-								value_new = static_cast<v_type>(zero_val - value);
-							} else {
-								value_new = static_cast<v_type>(value);
-							}
-							return iter;
+							return finish<negative>(iter, value_new, value);
 						}
 
 						if VN_LIKELY (iter < end) {
@@ -466,12 +382,7 @@ namespace vn {
 								return iter;
 							}
 						} else {
-							if constexpr (negative) {
-								value_new = static_cast<v_type>(zero_val - value);
-							} else {
-								value_new = static_cast<v_type>(value);
-							}
-							return iter;
+							return finish<negative>(iter, value_new, value);
 						}
 
 						if constexpr (uint_types<v_type>) {
@@ -484,12 +395,7 @@ namespace vn {
 									return iter;
 								}
 							} else {
-								if constexpr (negative) {
-									value_new = static_cast<v_type>(zero_val - value);
-								} else {
-									value_new = static_cast<v_type>(value);
-								}
-								return iter;
+								return finish<negative>(iter, value_new, value);
 							}
 						}
 					}
@@ -507,28 +413,13 @@ namespace vn {
 					value = static_cast<v_type_local>(value * 10 + (c - zero));
 					++iter;
 				} else {
-					if constexpr (negative) {
-						value_new = static_cast<v_type>(zero_val - value);
-					} else {
-						value_new = static_cast<v_type>(value);
-					}
-					return iter;
+					return finish<negative>(iter, value_new, value);
 				}
 			} else {
-				if constexpr (negative) {
-					value_new = static_cast<v_type>(zero_val - value);
-				} else {
-					value_new = static_cast<v_type>(value);
-				}
-				return iter;
+				return finish<negative>(iter, value_new, value);
 			}
 			if VN_LIKELY (iter == end) {
-				if constexpr (negative) {
-					value_new = static_cast<v_type>(zero_val - value);
-				} else {
-					value_new = static_cast<v_type>(value);
-				}
-				return iter;
+				return finish<negative>(iter, value_new, value);
 			} else {
 				while (iter < end && vn_is_digit(static_cast<uint8_t>(*iter))) {
 					++iter;
