@@ -46,6 +46,25 @@ namespace vn_from_chars_tests {
 	}
 
 	template<rt_ut::string_literal name, vn::detail::integer_types v_type> void test_function() {
+
+		rt_ut::unit_test<"from_chars deep leading-zero run preserves value", true>::assert_eq(true, [] {
+			for (int n_zeros = 1; n_zeros <= 25; ++n_zeros) {
+				for (uint64_t v: { 5ull, 42ull, 1000ull, 9999ull, 123456789ull }) {
+					std::string s(n_zeros, '0');
+					char tmp[24];
+					auto e = std::to_chars(tmp, tmp + 24, v);
+					s.append(tmp, e.ptr);
+					uint64_t ref{}, got{};
+					std::from_chars(s.data(), s.data() + s.size(), ref);
+					vn::from_chars(s.data(), s.data() + s.size(), got);
+					if (ref != got)
+						return false;
+				}
+			}
+			return true;
+		});
+
+
 		rt_ut::unit_test<name + "-from_chars zero", true>::assert_eq(ref_val<v_type>("0"), [] {
 			return vn_val<v_type>("0");
 		});

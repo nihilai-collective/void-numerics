@@ -18,7 +18,7 @@ namespace vn {
 			inline static char* impl(char* __restrict buf, const v_type value) noexcept {
 				VN_ALIGN(64) static constexpr const auto* __restrict char_table_4_digit_data = int_tables<4>::values;
 				const v_type a																 = value * 3518437209ULL >> 45;
-				*buf																		 = static_cast<char>(a) + '0';
+				*buf																		 = static_cast<char>(a) + zero;
 				std::memcpy(buf + 1, char_table_4_digit_data + value - a * 10000, 4ULL);
 				return buf + 5;
 			}
@@ -63,7 +63,7 @@ namespace vn {
 				const v_type bcdefghi														 = value - a * 100000000ULL;
 				const v_type bcde															 = bcdefghi * 3518437209ULL >> 45;
 				const v_type fghi															 = bcdefghi - (bcde * 10000U);
-				*buf																		 = static_cast<char>(a) + '0';
+				*buf																		 = static_cast<char>(a) + zero;
 				std::memcpy(buf + 1, char_table_4_digit_data + bcde, 4ULL);
 				std::memcpy(buf + 5, char_table_4_digit_data + fghi, 4ULL);
 				return buf + 9;
@@ -123,7 +123,7 @@ namespace vn {
 				const v_type bcde															 = abcde - (a * 10000U);
 				const v_type fghi															 = fghijklm * 3518437209U >> 45;
 				const v_type jklm															 = fghijklm - (fghi * 10000U);
-				*buf																		 = static_cast<char>(a) + '0';
+				*buf																		 = static_cast<char>(a) + zero;
 				std::memcpy(buf + 1, char_table_4_digit_data + bcde, 4ULL);
 				std::memcpy(buf + 5, char_table_4_digit_data + fghi, 4ULL);
 				std::memcpy(buf + 9, char_table_4_digit_data + jklm, 4ULL);
@@ -195,7 +195,7 @@ namespace vn {
 				const v_type fghi															 = bcdefghi - (bcde * 10000U);
 				const v_type jklm															 = jklmnopq * 3518437209U >> 45;
 				const v_type nopq															 = jklmnopq - (jklm * 10000U);
-				*buf																		 = static_cast<char>(a) + '0';
+				*buf																		 = static_cast<char>(a) + zero;
 				std::memcpy(buf + 1, char_table_4_digit_data + bcde, 4ULL);
 				std::memcpy(buf + 5, char_table_4_digit_data + fghi, 4ULL);
 				std::memcpy(buf + 9, char_table_4_digit_data + jklm, 4ULL);
@@ -278,7 +278,7 @@ namespace vn {
 								if (value < 1000U) {
 									if (value < 100U) {
 										if (value < 10U) {
-											buf[0] = char(value) + '0';
+											buf[0] = char(value) + zero;
 											return (buf + 1);
 										}
 										std::memcpy(buf, char_table_2_digit_data + value, 2ULL);
@@ -355,7 +355,7 @@ namespace vn {
 											if (value < 1000U) {
 												if (value < 100U) {
 													if (value < 10U) {
-														buf[0] = char(value) + '0';
+														buf[0] = char(value) + zero;
 														return (buf + 1);
 													}
 													std::memcpy(buf, char_table_2_digit_data + value, 2ULL);
@@ -393,7 +393,7 @@ namespace vn {
 						if (value < 1000U) {
 							if (value < 100U) {
 								if (value < 10U) {
-									buf[0] = char(value) + '0';
+									buf[0] = char(value) + zero;
 									return (buf + 1);
 								}
 								std::memcpy(buf, char_table_2_digit_data + value, 2ULL);
@@ -418,7 +418,7 @@ namespace vn {
 					VN_ALIGN(64) static constexpr const auto* __restrict char_table_3_digit_data = int_tables<3>::values;
 					if (value < 100) {
 						if (value < 10) {
-							buf[0] = char(value) + '0';
+							buf[0] = char(value) + zero;
 							return buf + 1;
 						}
 						std::memcpy(buf, &char_table_2_digit_data[value], 2);

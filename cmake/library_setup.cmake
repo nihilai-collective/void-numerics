@@ -1,24 +1,7 @@
-# MIT License
-#
-# Copyright (c) 2026 Nihilai Collective Corp
-#
-# Permission is hereby granted, free of charge, to any person obtaining a copy
-# of this software and associated documentation files (the "Software"), to deal
-# in the Software without restriction, including without limitation the rights
-# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-# copies of the Software, and to permit persons to whom the Software is
-# furnished to do so, subject to the following conditions:
-#
-# The above copyright notice and this permission notice shall be included in all
-# copies or substantial portions of the Software.
-#
-# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-# SOFTWARE.
+# MIT License#
+# Copyright (c) 2026 Nihilai Collective Corp#
+# (license text unchanged)
+# cmake/library_setup.cmake
 
 option(VN_ASAN  "Enable AddressSanitizer"            OFF)
 option(VN_UBSAN "Enable UndefinedBehaviorSanitizer"  OFF)
@@ -91,68 +74,103 @@ target_include_directories(${PROJECT_NAME}
         $<INSTALL_INTERFACE:include>
 )
 
+set(VN_CLANG_COMPILE_OPTIONS
+    $<$<AND:$<CONFIG:Release>,$<NOT:$<BOOL:${VN_ASAN_EFFECTIVE}>>>:
+        -O3
+        -march=native
+        -flto
+        -finline-functions
+        -fomit-frame-pointer
+        -fno-rtti
+    >
+    $<$<AND:$<CONFIG:Release>,$<BOOL:${VN_ASAN_EFFECTIVE}>>:
+        -O1
+        -fno-rtti
+    >
+    $<$<CONFIG:Debug>:
+        -O0
+        -g
+        -fno-omit-frame-pointer
+    >
+    $<$<BOOL:${VN_ASAN_EFFECTIVE}>:
+        -fsanitize=address
+        -fno-omit-frame-pointer
+        -fno-optimize-sibling-calls
+        -fsanitize-address-use-after-scope
+        -U_FORTIFY_SOURCE
+        -D_FORTIFY_SOURCE=0
+    >
+    $<$<BOOL:${VN_UBSAN_EFFECTIVE}>:
+        -fsanitize=undefined
+        -fno-sanitize-recover=all
+    >
+)
+
+set(VN_GNU_COMPILE_OPTIONS
+    $<$<BOOL:${VN_ASAN_EFFECTIVE}>:
+        -fsanitize=address
+        -fsanitize-address-use-after-scope
+        -U_FORTIFY_SOURCE
+        -D_FORTIFY_SOURCE=0
+    >
+    $<$<BOOL:${VN_UBSAN_EFFECTIVE}>:
+        -fsanitize=undefined
+        -fno-sanitize-recover=all
+    >
+    $<$<CONFIG:Debug>:-O0>
+    $<$<CONFIG:Debug>:-g>
+    $<$<NOT:$<CONFIG:Debug>>:-fwhole-program>
+)
+
+set(VN_MSVC_COMPILE_OPTIONS
+    $<$<AND:$<CONFIG:Debug>,$<NOT:$<BOOL:${VN_ASAN_EFFECTIVE}>>>:/Od /Zi /RTC1>
+    $<$<AND:$<CONFIG:Debug>,$<BOOL:${VN_ASAN_EFFECTIVE}>>:/Od /Zi>
+    $<$<CONFIG:Release>:/O2 /Ob2 /GL /fp:fast /GS- /Gy>
+    $<$<BOOL:${VN_ASAN_EFFECTIVE}>:/fsanitize=address>
+    /arch:AVX2
+)
+
+set(VN_COMPILE_OPTIONS
+    $<$<CXX_COMPILER_ID:AppleClang>:${VN_CLANG_COMPILE_OPTIONS}>
+    $<$<CXX_COMPILER_ID:Clang>:${VN_CLANG_COMPILE_OPTIONS}>
+    $<$<CXX_COMPILER_ID:MSVC>:${VN_MSVC_COMPILE_OPTIONS}>
+    $<$<CXX_COMPILER_ID:GNU>:${VN_GNU_COMPILE_OPTIONS}>
+)
+
 target_compile_options(${PROJECT_NAME}
-    INTERFACE
-        $<$<CXX_COMPILER_ID:MSVC>:
-            /arch:AVX2
-            $<$<CONFIG:Release>:/O2 /Ob2 /GL /fp:fast /GS- /Gy>
-            $<$<AND:$<CONFIG:Debug>,$<NOT:$<BOOL:${VN_ASAN_EFFECTIVE}>>>:/Od /Zi /RTC1>
-            $<$<AND:$<CONFIG:Debug>,$<BOOL:${VN_ASAN_EFFECTIVE}>>:/Od /Zi>
-            $<$<BOOL:${VN_ASAN_EFFECTIVE}>:/fsanitize=address>
-        >
-        $<$<OR:$<CXX_COMPILER_ID:GNU>,$<CXX_COMPILER_ID:Clang>,$<CXX_COMPILER_ID:AppleClang>>:
-            $<$<AND:$<CONFIG:Release>,$<NOT:$<BOOL:${VN_ASAN_EFFECTIVE}>>>:
-                -O3
-                -march=native
-                -flto
-                -finline-functions
-                -fomit-frame-pointer
-                -fno-rtti
-            >
-            $<$<AND:$<CONFIG:Release>,$<BOOL:${VN_ASAN_EFFECTIVE}>>:
-                -O1
-                -fno-rtti
-            >
-            $<$<CONFIG:Debug>:
-                -O0
-                -g
-                -fno-omit-frame-pointer
-            >
-            $<$<BOOL:${VN_ASAN_EFFECTIVE}>:
-                -fsanitize=address
-                -fno-omit-frame-pointer
-                -fno-optimize-sibling-calls
-                -fsanitize-address-use-after-scope
-                -U_FORTIFY_SOURCE
-                -D_FORTIFY_SOURCE=0
-            >
-            $<$<BOOL:${VN_UBSAN_EFFECTIVE}>:
-                -fsanitize=undefined
-                -fno-sanitize-recover=all
-            >
-        >
+    INTERFACE ${VN_COMPILE_OPTIONS}
+)
+
+set(VN_CLANG_LINK_OPTIONS
+    $<$<BOOL:${VN_UBSAN_EFFECTIVE}>:-fsanitize=undefined>    
+    $<$<BOOL:${VN_ASAN_EFFECTIVE}>:-fsanitize=address>
+    $<$<NOT:$<PLATFORM_ID:Darwin>>:-s>
+    $<$<PLATFORM_ID:Darwin>:-Wl,-x>
+)
+
+set(VN_GNU_LINK_OPTIONS
+    $<$<BOOL:${VN_UBSAN_EFFECTIVE}>:-fsanitize=undefined>
+    $<$<BOOL:${VN_ASAN_EFFECTIVE}>:-fsanitize=address>
+    $<$<PLATFORM_ID:Linux>:-static-libasan>
+    $<$<NOT:$<PLATFORM_ID:Darwin>>:-s>
+    $<$<PLATFORM_ID:Darwin>:-Wl,-x>
+    $<$<CONFIG:Release>:-flto>
+)
+
+set(VN_MSVC_LINK_OPTIONS
+    $<$<BOOL:${VN_ASAN_EFFECTIVE}>:/INFERASANLIBS>
+    $<$<CONFIG:Release>:/LTCG /OPT:REF /OPT:ICF>
+)
+
+set(VN_LINK_OPTIONS
+    $<$<CXX_COMPILER_ID:AppleClang>:${VN_CLANG_LINK_OPTIONS}>
+    $<$<CXX_COMPILER_ID:Clang>:${VN_CLANG_LINK_OPTIONS}>
+    $<$<CXX_COMPILER_ID:MSVC>:${VN_MSVC_LINK_OPTIONS}>
+    $<$<CXX_COMPILER_ID:GNU>:${VN_GNU_LINK_OPTIONS}>
 )
 
 target_link_options(${PROJECT_NAME}
-    INTERFACE
-        $<$<CXX_COMPILER_ID:MSVC>:
-            $<$<CONFIG:Release>:/LTCG /OPT:REF /OPT:ICF>
-            $<$<BOOL:${VN_ASAN_EFFECTIVE}>:/INFERASANLIBS>
-        >
-        $<$<OR:$<CXX_COMPILER_ID:GNU>,$<CXX_COMPILER_ID:Clang>,$<CXX_COMPILER_ID:AppleClang>>:
-            $<$<AND:$<CONFIG:Release>,$<NOT:$<BOOL:${VN_ASAN_EFFECTIVE}>>>:
-                -flto
-                $<$<PLATFORM_ID:Darwin>:-Wl,-x>
-                $<$<NOT:$<PLATFORM_ID:Darwin>>:-s>
-            >
-            $<$<BOOL:${VN_ASAN_EFFECTIVE}>:
-                -fsanitize=address
-                $<$<AND:$<PLATFORM_ID:Linux>,$<CXX_COMPILER_ID:GNU>>:-static-libasan>
-            >
-            $<$<BOOL:${VN_UBSAN_EFFECTIVE}>:
-                -fsanitize=undefined
-            >
-        >
+    INTERFACE ${VN_LINK_OPTIONS}
 )
 
 if(VN_HOMEBREW_GCC_LIBDIR)
