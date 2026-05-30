@@ -32,6 +32,14 @@ namespace vn {
 
 		template<uint8_types auto repeat, uint_types v_type> static constexpr uint64_t repeat_bytes_v = static_cast<v_type>(0x0101010101010101ull) * static_cast<v_type>(repeat);
 
+		template<bool negative> static constexpr uint64_t comp_val_addition{ [] {
+			if constexpr (negative) {
+				return 1;
+			} else {
+				return 0;
+			}
+		}() };
+
 		template<integer_types v_type> using next_higher_int_t = decltype([]<integer_types v_type_new> {
 			if constexpr (uint8_types<v_type_new>) {
 				return uint16_t{};
@@ -53,7 +61,7 @@ namespace vn {
 		}.template operator()<v_type>());
 
 		template<typename v_type, bool negative> static constexpr std::array<std::make_unsigned_t<v_type>, 256> gen_raw_comp_vals() {
-			constexpr auto max_value{ static_cast<std::make_unsigned_t<v_type>>(std::numeric_limits<base_t<v_type>>::max()) + negative ? 1 : 0 };
+			constexpr auto max_value{ static_cast<std::make_unsigned_t<v_type>>(std::numeric_limits<base_t<v_type>>::max()) + comp_val_addition<negative> };
 			std::array<std::make_unsigned_t<v_type>, 256> return_values_interna{};
 			return_values_interna['0'] = (max_value - 0) / 10;
 			return_values_interna['1'] = (max_value - 1) / 10;
@@ -159,7 +167,7 @@ namespace vn {
 #if !VN_COMPILER_CLANG && !VN_COMPILER_GNU && !VN_COMPILER_MSVC
 
 		template<uint_types v_type_new> VN_FORCE_INLINE static v_type_new mulhi_portable(v_type_new a, v_type_new b) noexcept {
-			using v_type						 = next_higher_int_t<v_type_new>;
+			using v_type						 = get_next_higher_int_t<v_type_new>;
 			static constexpr uint64_t total_bits = sizeof(v_type_new) * 8;
 			static constexpr uint64_t half_bits	 = total_bits / 2;
 			static constexpr v_type mask		 = (static_cast<v_type>(1) << half_bits) - 1;
