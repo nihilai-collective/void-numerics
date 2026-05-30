@@ -97,6 +97,9 @@ namespace vn {
 
 	namespace detail {
 
+		using true_type	 = std::integral_constant<bool, true>;
+		using false_type = std::integral_constant<bool, false>;
+
 		enum class conversion_classes {
 			i_to_str,
 			d_to_str,

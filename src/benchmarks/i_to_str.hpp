@@ -294,7 +294,7 @@ namespace i_to_str_tests {
 			out_type* p			  = begin;
 			for (uint64_t x = 0; x < test_size; ++x) {
 				Op::template convert<input_type>(entries[x], p->buf);
-				bnch_swt::do_not_optimize_away(p);
+				bnch_swt::do_not_optimize_away(p->buf);
 				++p;
 			}
 			++current_index;

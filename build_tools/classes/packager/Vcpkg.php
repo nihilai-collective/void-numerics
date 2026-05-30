@@ -161,14 +161,14 @@ vcpkg_install_copyright(FILE_LIST "${SOURCE_PATH}/License.md")
   "description": "The C++ standard library\'s <charconv> is already fast. void-numerics is faster - substantially so on hot integer-conversion paths - without sacrificing correctness, portability, or API compatibility.",
   "homepage": "https://github.com/nihilai-collective/void-numerics",
   "license": "MIT",
-  "supports": "(!android) & x64",
   "dependencies": [
     {
       "name": "vcpkg-cmake",
       "host": true
     }
   ]
-}';
+}
+';
         echo GREEN . "Writing portfile...\n" . WHITE;
         $vcpkgDir = './vcpkg/ports/void-numerics';
         if (!is_dir($vcpkgDir)) {

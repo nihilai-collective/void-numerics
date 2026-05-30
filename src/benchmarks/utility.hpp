@@ -40,8 +40,8 @@ namespace benchmarks {
 		++output_buffer_index;
 	}
 
-	template<typename benchmark_stage_type, bnch_swt::string_literal test_name_new, typename test_data_type, typename output_data_type, typename... test_types> auto execute_tests(
-		uint64_t test_size, test_data_type& test_data, output_data_type& output_buffer) {
+	template<typename benchmark_stage_type, bnch_swt::string_literal test_name_new, typename test_data_type, typename output_data_type, typename... test_types>
+	auto execute_tests(uint64_t test_size, test_data_type& test_data, output_data_type& output_buffer) {
 		uint64_t output_buffer_index{};
 		(execute_test<benchmark_stage_type, test_name_new, test_types>(test_size, test_data, output_buffer, output_buffer_index), ...);
 	}
@@ -63,14 +63,13 @@ namespace benchmarks {
 		correctness_verifier::impl(test_data, test_name.data());
 	}
 
-	template<typename benchmark_stage_type, bnch_swt::string_literal test_name, uint64_t total_iters_new, uint64_t measured_iters,
-		vn::detail::integer_types v_type, typename correctness_verifier, template<uint64_t, typename, bool> typename digit_generator_type, bool negative, typename... test_types>
+	template<typename benchmark_stage_type, bnch_swt::string_literal test_name, uint64_t total_iters_new, uint64_t measured_iters, vn::detail::integer_types v_type,
+		typename correctness_verifier, template<uint64_t, typename, bool> typename digit_generator_type, bool negative, typename... test_types>
 	static void mixed_digit_count() {
 		run_one_test<benchmark_stage_type, test_name, 100, total_iters_new, measured_iters, v_type, correctness_verifier, digit_generator_type, negative, test_types...>();
 		run_one_test<benchmark_stage_type, test_name, 1000, total_iters_new, measured_iters, v_type, correctness_verifier, digit_generator_type, negative, test_types...>();
 		run_one_test<benchmark_stage_type, test_name, 10000, total_iters_new, measured_iters, v_type, correctness_verifier, digit_generator_type, negative, test_types...>();
-		run_one_test<benchmark_stage_type, test_name, 100000, total_iters_new, measured_iters, v_type, correctness_verifier, digit_generator_type, negative, test_types...>(
-		);
+		run_one_test<benchmark_stage_type, test_name, 100000, total_iters_new, measured_iters, v_type, correctness_verifier, digit_generator_type, negative, test_types...>();
 	}
 
 	template<typename benchmark_stage_type, bnch_swt::string_literal test_name, uint64_t total_iters, uint64_t measured_iters, vn::detail::integer_types v_type,
