@@ -107,7 +107,8 @@ namespace benchmarks {
 				.max_execution_count																	= total_iters };
 			using bench_stage_type = bnch_swt::benchmark_stage<stage_name, config_data>;
 			test_function_impl<bench_stage_type, stage_name, total_iters, measured_iters, correctness_verifier, digit_generator_type, test_types...>();
-			std::cout << bench_stage_type::generate_markdown("void-numerics", "../../../../../Benchmarks") << std::endl;
+			std::cout << bench_stage_type::generate_markdown("void-numerics") << std::endl;
+			std::cout << bench_stage_type::generate_csv("void-numerics") << std::endl;
 		}
 	};
 
