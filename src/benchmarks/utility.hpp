@@ -102,9 +102,9 @@ namespace benchmarks {
 		template<uint64_t, typename, bool> typename digit_generator_type, typename... test_types>
 	struct tests {
 		static void impl() {
-			static constexpr bnch_swt::stage_config config_data{ .max_execution_count = total_iters,
-				.measured_iteration_count											  = measured_iters,
-				.clear_cpu_cache_before_all_iterations								  = true };
+			static constexpr bnch_swt::stage_config config_data{ .clear_cpu_cache_before_all_executions = true,
+				.measured_execution_count																= measured_iters,
+				.max_execution_count																	= total_iters };
 			using bench_stage_type = bnch_swt::benchmark_stage<stage_name, config_data>;
 			test_function_impl<bench_stage_type, stage_name, total_iters, measured_iters, correctness_verifier, digit_generator_type, test_types...>();
 			std::cout << bench_stage_type::generate_markdown("void-numerics", "../../../../../Benchmarks") << std::endl;

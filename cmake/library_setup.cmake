@@ -82,6 +82,9 @@ set(VN_CLANG_COMPILE_OPTIONS
         -finline-functions
         -fomit-frame-pointer
         -fno-rtti
+        -fno-vectorize
+        -fno-slp-vectorize
+        -fno-stack-protector
     >
     $<$<AND:$<CONFIG:Release>,$<BOOL:${VN_ASAN_EFFECTIVE}>>:
         -O1
@@ -125,7 +128,7 @@ set(VN_GNU_COMPILE_OPTIONS
 set(VN_MSVC_COMPILE_OPTIONS
     $<$<AND:$<CONFIG:Debug>,$<NOT:$<BOOL:${VN_ASAN_EFFECTIVE}>>>:/Od /Zi /RTC1>
     $<$<AND:$<CONFIG:Debug>,$<BOOL:${VN_ASAN_EFFECTIVE}>>:/Od /Zi>
-    $<$<CONFIG:Release>:/O2 /Ob2 /GL /fp:fast /GS- /Gy>
+    $<$<CONFIG:Release>:/O2 /Ob2 /GL /GS- /Gy>
     $<$<BOOL:${VN_ASAN_EFFECTIVE}>:/fsanitize=address>
     /arch:AVX2
 )

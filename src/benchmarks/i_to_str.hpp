@@ -8,230 +8,61 @@
 
 namespace i_to_str_tests {
 
-	template<vn::detail::uint16_types v_type> VN_FORCE_INLINE char* jeaiii_to_text_checked(char* buf, char* end, v_type value) noexcept {
-		if (value < 10000U) {
-			if (value < 1000U) {
-				if (value < 100U) {
-					if (value < 10U) {
-						if (end - buf < 1) {
-							return end;
-						}
-						return jeaiii::to_text(buf, value);
-					}
-					if (end - buf < 2)
-						return end;
-					return jeaiii::to_text(buf, value);
-				}
-				if (end - buf < 3)
-					return end;
-				return jeaiii::to_text(buf, value);
-			}
-			if (end - buf < 4)
-				return end;
-			return jeaiii::to_text(buf, value);
-		}
-		if (end - buf < 5)
-			return end;
-		return jeaiii::to_text(buf, value);
-	}
-
-	template<vn::detail::int16_types v_type> VN_FORCE_INLINE char* jeaiii_to_text_checked(char* buf, char* end, v_type value) noexcept {
-		*buf		  = '-';
-		uint16_t uval = (static_cast<uint16_t>(value) ^ static_cast<uint16_t>(value >> 15)) - static_cast<uint16_t>(value >> 15);
-		return jeaiii_to_text_checked(buf + (value < 0), end, uval);
-	}
-
-	template<vn::detail::uint32_types v_type> VN_FORCE_INLINE char* jeaiii_to_text_checked(char* buf, char* end, v_type value) noexcept {
-		if (value < 1000000000U) {
-			if (value < 100000U) {
-				if (value < 10000U) {
-					if (value < 1000U) {
-						if (value < 100U) {
-							if (value < 10U) {
-								if (end - buf < 1) {
-									return end;
-								}
-								return jeaiii::to_text(buf, value);
-							}
-							if (end - buf < 2)
-								return end;
-							return jeaiii::to_text(buf, value);
-						}
-						if (end - buf < 3)
-							return end;
-						return jeaiii::to_text(buf, value);
-					}
-					if (end - buf < 4)
-						return end;
-					return jeaiii::to_text(buf, value);
-				}
-				if (end - buf < 5)
-					return end;
-				return jeaiii::to_text(buf, value);
-			}
-			if (value < 10000000U) {
-				if (value < 1000000U) {
-					if (end - buf < 6) {
-						return end;
-					}
-					return jeaiii::to_text(buf, value);
-				}
-				if (end - buf < 7) {
-					return end;
-				}
-				return jeaiii::to_text(buf, value);
-			}
-			if (value < 100000000U) {
-				if (end - buf < 8) {
-					return end;
-				}
-				return jeaiii::to_text(buf, value);
-			}
-			if (end - buf < 9) {
-				return end;
-			}
-			return jeaiii::to_text(buf, value);
-		}
-		if (end - buf < 10) {
-			return end;
-		}
-		return jeaiii::to_text(buf, value);
-	}
-
-	template<vn::detail::int32_types v_type> VN_FORCE_INLINE char* jeaiii_to_text_checked(char* buf, char* end, v_type value) noexcept {
-		*buf		  = '-';
-		uint32_t uval = (static_cast<uint32_t>(value) ^ static_cast<uint32_t>(value >> 31)) - static_cast<uint32_t>(value >> 31);
-		return jeaiii_to_text_checked(buf + (value < 0), end, uval);
-	}
-
-	template<vn::detail::uint64_types v_type> VN_FORCE_INLINE char* jeaiii_to_text_checked(char* buf, char* end, v_type value) noexcept {
-		if (value < 10000000000ULL) {
-			if (value < 100000ULL) {
-				if (value < 1000ULL) {
-					if (value < 100ULL) {
-						if (value < 10ULL) {
-							if (end - buf < 1)
-								return end;
-							return jeaiii::to_text(buf, value);
-						}
-						if (end - buf < 2)
-							return end;
-						return jeaiii::to_text(buf, value);
-					}
-					if (end - buf < 3)
-						return end;
-					return jeaiii::to_text(buf, value);
-				}
-				if (value < 10000ULL) {
-					if (end - buf < 4)
-						return end;
-					return jeaiii::to_text(buf, value);
-				}
-				if (end - buf < 5)
-					return end;
-				return jeaiii::to_text(buf, value);
-			}
-			if (value < 10000000ULL) {
-				if (value < 1000000ULL) {
-					if (end - buf < 6)
-						return end;
-					return jeaiii::to_text(buf, value);
-				}
-				if (end - buf < 7)
-					return end;
-				return jeaiii::to_text(buf, value);
-			}
-			if (value < 100000000ULL) {
-				if (end - buf < 8)
-					return end;
-				return jeaiii::to_text(buf, value);
-			}
-			if (value < 1000000000ULL) {
-				if (end - buf < 9)
-					return end;
-				return jeaiii::to_text(buf, value);
-			}
-			if (end - buf < 10)
-				return end;
-			return jeaiii::to_text(buf, value);
-		} else {
-			if (value < 1000000000000000ULL) {
-				if (value < 1000000000000ULL) {
-					if (value < 100000000000ULL) {
-						if (end - buf < 11)
-							return end;
-						return jeaiii::to_text(buf, value);
-					}
-					if (end - buf < 12)
-						return end;
-					return jeaiii::to_text(buf, value);
-				}
-				if (value < 10000000000000ULL) {
-					if (end - buf < 13)
-						return end;
-					return jeaiii::to_text(buf, value);
-				}
-				if (value < 100000000000000ULL) {
-					if (end - buf < 14)
-						return end;
-					return jeaiii::to_text(buf, value);
-				}
-				if (end - buf < 15)
-					return end;
-				return jeaiii::to_text(buf, value);
-			}
-			if (value < 100000000000000000ULL) {
-				if (value < 10000000000000000ULL) {
-					if (end - buf < 16)
-						return end;
-					return jeaiii::to_text(buf, value);
-				}
-				if (end - buf < 17)
-					return end;
-				return jeaiii::to_text(buf, value);
-			}
-			if (value < 1000000000000000000ULL) {
-				if (end - buf < 18)
-					return end;
-				return jeaiii::to_text(buf, value);
-			}
-			if (value < 10000000000000000000ULL) {
-				if (end - buf < 19)
-					return end;
-				return jeaiii::to_text(buf, value);
-			}
-			if (end - buf < 20)
-				return end;
-			return jeaiii::to_text(buf, value);
-		}
-	}
-
-	template<vn::detail::int64_types v_type> VN_FORCE_INLINE char* jeaiii_to_text_checked(char* buf, char* end, v_type value) noexcept {
-		*buf		  = '-';
-		uint64_t uval = (static_cast<uint64_t>(value) ^ static_cast<uint64_t>(value >> 63)) - static_cast<uint64_t>(value >> 63);
-		return jeaiii_to_text_checked(buf + (value < 0), end, uval);
+	template<vn::detail::uint_types v_type, uint64_t size> VN_FORCE_INLINE static char* jeaiii_impl_internal(char* buf, char* end, v_type value) noexcept {
+		return (static_cast<uint64_t>(end - buf) >= size) ? jeaiii::to_text(buf, value) : end;
 	}
 
 	template<vn::detail::uint8_types v_type> VN_FORCE_INLINE char* jeaiii_to_text_checked(char* buf, char* end, v_type value) noexcept {
-		if (value < 100U) {
-			if (value < 10U) {
-				if (end - buf < 1)
-					return end;
-				return jeaiii::to_text(buf, value);
-			}
-			if (end - buf < 2)
-				return end;
-			return jeaiii::to_text(buf, value);
-		}
-		if (end - buf < 3)
-			return end;
-		return jeaiii::to_text(buf, value);
+		return value < 10U ? jeaiii_impl_internal<v_type, 1ULL>(buf, end, value)
+			: value < 100U ? jeaiii_impl_internal<v_type, 2ULL>(buf, end, value)
+						   : jeaiii_impl_internal<v_type, 3ULL>(buf, end, value);
 	}
 
-	template<vn::detail::int8_types v_type> VN_FORCE_INLINE char* jeaiii_to_text_checked(char* buf, char* end, v_type value) noexcept {
-		*buf		 = '-';
-		uint8_t uval = (static_cast<uint8_t>(value) ^ static_cast<uint8_t>(value >> 7)) - static_cast<uint8_t>(value >> 7);
-		return jeaiii_to_text_checked(buf + (value < 0), end, uval);
+	template<vn::detail::uint16_types v_type> VN_FORCE_INLINE char* jeaiii_to_text_checked(char* buf, char* end, v_type value) noexcept {
+		return value < 100U	 ? value < 10U ? jeaiii_impl_internal<v_type, 1ULL>(buf, end, value) : jeaiii_impl_internal<v_type, 2ULL>(buf, end, value)
+			 : value < 10000U ? value < 1000U ? jeaiii_impl_internal<v_type, 3ULL>(buf, end, value) : jeaiii_impl_internal<v_type, 4ULL>(buf, end, value)
+							  : jeaiii_impl_internal<v_type, 5ULL>(buf, end, value);
+	}
+
+	template<vn::detail::uint32_types v_type> VN_FORCE_INLINE char* jeaiii_to_text_checked(char* buf, char* end, v_type value) noexcept {
+		return value < 100000U	  ? value < 1000U ? value < 100U
+					   ? value < 10U ? jeaiii_impl_internal<v_type, 1ULL>(buf, end, value) : jeaiii_impl_internal<v_type, 2ULL>(buf, end, value)
+					   : jeaiii_impl_internal<v_type, 3ULL>(buf, end, value)
+				   : value < 10000U ? jeaiii_impl_internal<v_type, 4ULL>(buf, end, value)
+												  : jeaiii_impl_internal<v_type, 5ULL>(buf, end, value)
+			   : value < 10000000U ? value < 1000000U ? jeaiii_impl_internal<v_type, 6ULL>(buf, end, value) : jeaiii_impl_internal<v_type, 7ULL>(buf, end, value)
+			   : value < 1000000000U ? value < 100000000U ? jeaiii_impl_internal<v_type, 8ULL>(buf, end, value) : jeaiii_impl_internal<v_type, 9ULL>(buf, end, value)
+									 : jeaiii_impl_internal<v_type, 10ULL>(buf, end, value);
+	}
+
+	template<vn::detail::uint64_types v_type> VN_FORCE_INLINE char* jeaiii_to_text_checked(char* buf, char* end, v_type value) noexcept {
+		return value < 100000000ULL		   ? value < 10000ULL ? value < 100ULL
+						   ? value < 10ULL ? jeaiii_impl_internal<v_type, 1ULL>(buf, end, value) : jeaiii_impl_internal<v_type, 2ULL>(buf, end, value)
+						   : value < 1000ULL ? jeaiii_impl_internal<v_type, 3ULL>(buf, end, value)
+											 : jeaiii_impl_internal<v_type, 4ULL>(buf, end, value)
+					   : value < 1000000ULL	 ? value < 100000ULL ? jeaiii_impl_internal<v_type, 5ULL>(buf, end, value) : jeaiii_impl_internal<v_type, 6ULL>(buf, end, value)
+						: value < 10000000ULL ? jeaiii_impl_internal<v_type, 7ULL>(buf, end, value)
+											 : jeaiii_impl_internal<v_type, 8ULL>(buf, end, value)
+				   : value < 1000000000000ULL ? value < 10000000000ULL
+					   ? value < 1000000000ULL ? jeaiii_impl_internal<v_type, 9ULL>(buf, end, value) : jeaiii_impl_internal<v_type, 10ULL>(buf, end, value)
+					   : value < 100000000000ULL ? jeaiii_impl_internal<v_type, 11ULL>(buf, end, value)
+												 : jeaiii_impl_internal<v_type, 12ULL>(buf, end, value)
+				   : value < 10000000000000000ULL ? value < 100000000000000ULL
+					   ? value < 10000000000000ULL ? jeaiii_impl_internal<v_type, 13ULL>(buf, end, value) : jeaiii_impl_internal<v_type, 14ULL>(buf, end, value)
+					   : value < 1000000000000000ULL ? jeaiii_impl_internal<v_type, 15ULL>(buf, end, value)
+													 : jeaiii_impl_internal<v_type, 16ULL>(buf, end, value)
+				   : value < 1000000000000000000ULL
+			? value < 100000000000000000ULL ? jeaiii_impl_internal<v_type, 17ULL>(buf, end, value) : jeaiii_impl_internal<v_type, 18ULL>(buf, end, value)
+			: value < 10000000000000000000ULL ? jeaiii_impl_internal<v_type, 19ULL>(buf, end, value)
+											  : jeaiii_impl_internal<v_type, 20ULL>(buf, end, value);
+	}
+
+	template<vn::detail::int_types v_type> VN_FORCE_INLINE char* jeaiii_to_text_checked(char* buf, char* end, v_type value) noexcept {
+		using unsigned_type					 = std::make_unsigned_t<v_type>;
+		constexpr unsigned_type shift_amount = static_cast<unsigned_type>(sizeof(v_type) * 8ULL - 1ULL);
+		const unsigned_type uval = (static_cast<unsigned_type>(value) ^ static_cast<unsigned_type>(value >> shift_amount)) - static_cast<unsigned_type>(value >> shift_amount);
+		return (value < 0) ? ((end - buf > 0) ? (*buf = '-', jeaiii_to_text_checked<unsigned_type>(buf + 1, end, uval)) : end)
+						   : jeaiii_to_text_checked<unsigned_type>(buf, end, uval);
 	}
 
 	template<typename v_type_new> struct integer_entry {
