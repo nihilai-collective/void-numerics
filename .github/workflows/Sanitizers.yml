@@ -71,11 +71,11 @@ jobs:
 
       - name: Configure CMake (Unix)
         if: runner.os != 'Windows'
-        run: cmake -S . -B ./Build -DCMAKE_BUILD_TYPE=Debug -DCMAKE_CXX_COMPILER=${{ env.CXX_BIN }} -DVN_BENCHMARKS=TRUE -DVN_TESTS=TRUE -DVN_ASAN=TRUE -DVN_UBSAN=TRUE
+        run: cmake -S . -B ./Build -DCMAKE_BUILD_TYPE=Debug -DCMAKE_CXX_COMPILER=${{ env.CXX_BIN }} -DVN_TESTS=TRUE -DVN_ASAN=TRUE -DVN_UBSAN=TRUE
 
       - name: Configure CMake (Windows)
         if: runner.os == 'Windows'
-        run: cmake -S . -B ./Build -DCMAKE_BUILD_TYPE=Debug -DCMAKE_CXX_COMPILER=cl -DCMAKE_C_COMPILER=cl -DVN_BENCHMARKS=TRUE -DVN_TESTS=TRUE -DVN_ASAN=TRUE -DVN_UBSAN=TRUE
+        run: cmake -S . -B ./Build -DCMAKE_BUILD_TYPE=Debug -DCMAKE_CXX_COMPILER=cl -DCMAKE_C_COMPILER=cl -DVN_TESTS=TRUE -DVN_ASAN=TRUE -DVN_UBSAN=TRUE
 
       - name: Build
         run: cmake --build ./Build --config=Debug -v
@@ -89,11 +89,8 @@ jobs:
         run: |
             sudo chmod +x /usr/local/bin/vn_unit_tests
             sudo /usr/local/bin/vn_unit_tests
-            sudo chmod +x /usr/local/bin/vn_benchmarks    
-            sudo /usr/local/bin/vn_benchmarks
     
       - name: Run the Test (Windows)
         if: matrix.os == 'windows-latest'
         run: |
             & "C:/Program Files (x86)/void-numerics/bin/vn_unit_tests.exe"
-            & "C:/Program Files (x86)/void-numerics/bin/vn_benchmarks.exe"

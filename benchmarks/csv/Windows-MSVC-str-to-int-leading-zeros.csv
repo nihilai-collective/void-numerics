@@ -1,8 +1,0 @@
-# void-numerics Benchmark Results
-**Platform:** Intel(R) Core(TM) i9-14900KF
-**OS:** Windows 10.0.26200
-**Compiler:** MSVC 19.44.35227.0
-Library,Wins,Ties,Losses
-vn::from_chars,28,14,6
-std::from_chars,6,14,28
-strtoll/strtoull,0,0,48

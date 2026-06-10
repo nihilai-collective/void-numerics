@@ -16,7 +16,7 @@ Every conversion is exhaustively unit-tested against `std::to_chars` / `std::fro
 
 ---
 
-## [Benchmarks](https://github.com/nihilai-collective/void-numerics/blob/main/Benchmarks/Index.md)
+## [Benchmarks](https://github.com/nihilai-collective/stringint-benchmarks)
 
 ## Compiler Support
 ----
