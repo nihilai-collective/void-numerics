@@ -16,19 +16,19 @@ Every conversion is exhaustively unit-tested against `std::to_chars` / `std::fro
 
 ---
 
-## [Benchmarks](https://github.com/nihilai-collective/void-numerics/blob/main/Benchmarks/Index.md)
+## [Benchmarks](https://github.com/nihilai-collective/stringint-benchmarks)
 
 ## Compiler Support
 ----
-![MSVC](https://img.shields.io/github/actions/workflow/status/nihilai-collective/void-numerics/Benchmark.yml?style=plastic&logo=microsoft&logoColor=green&label=MSVC&labelColor=pewter&color=blue&branch=main)
-![GCC](https://img.shields.io/github/actions/workflow/status/nihilai-collective/void-numerics/Benchmark.yml?style=plastic&logo=linux&logoColor=green&label=GCC&labelColor=pewter&color=blue&branch=main)
-![CLANG](https://img.shields.io/github/actions/workflow/status/nihilai-collective/void-numerics/Benchmark.yml?style=plastic&logo=apple&logoColor=green&label=CLANG&labelColor=pewter&color=blue&branch=main)
+![MSVC](https://img.shields.io/github/actions/workflow/status/nihilai-collective/void-numerics/unit-tests.yml?style=plastic&logo=microsoft&logoColor=green&label=MSVC&labelColor=pewter&color=blue&branch=main)
+![GCC](https://img.shields.io/github/actions/workflow/status/nihilai-collective/void-numerics/unit-tests.yml?style=plastic&logo=linux&logoColor=green&label=GCC&labelColor=pewter&color=blue&branch=main)
+![CLANG](https://img.shields.io/github/actions/workflow/status/nihilai-collective/void-numerics/unit-tests.yml?style=plastic&logo=apple&logoColor=green&label=CLANG&labelColor=pewter&color=blue&branch=main)
 
 ## Operating System Support
 ----
-![Windows](https://img.shields.io/github/actions/workflow/status/nihilai-collective/void-numerics/Benchmark.yml?style=plastic&logo=microsoft&logoColor=green&label=Windows&labelColor=pewter&color=blue&branch=main)
-![Linux](https://img.shields.io/github/actions/workflow/status/nihilai-collective/void-numerics/Benchmark.yml?style=plastic&logo=linux&logoColor=green&label=Linux&labelColor=pewter&color=blue&branch=main)
-![Mac](https://img.shields.io/github/actions/workflow/status/nihilai-collective/void-numerics/Benchmark.yml?style=plastic&logo=apple&logoColor=green&label=MacOS&labelColor=pewter&color=blue&branch=main)
+![Windows](https://img.shields.io/github/actions/workflow/status/nihilai-collective/void-numerics/unit-tests.yml?style=plastic&logo=microsoft&logoColor=green&label=Windows&labelColor=pewter&color=blue&branch=main)
+![Linux](https://img.shields.io/github/actions/workflow/status/nihilai-collective/void-numerics/unit-tests.yml?style=plastic&logo=linux&logoColor=green&label=Linux&labelColor=pewter&color=blue&branch=main)
+![Mac](https://img.shields.io/github/actions/workflow/status/nihilai-collective/void-numerics/unit-tests.yml?style=plastic&logo=apple&logoColor=green&label=MacOS&labelColor=pewter&color=blue&branch=main)
 
 ---
 
@@ -42,7 +42,7 @@ Every conversion is exhaustively unit-tested against `std::to_chars` / `std::fro
 - **Compile-time tables** for digit conversion and overflow bounds
 - **Multiply-and-shift division replacement** for hot paths
 - **Force-inlined helpers** with manual ladder dispatch sized to digit count
-- **Cross-platform CI**: Ubuntu Clang-20, Ubuntu GCC-14, macOS Clang, macOS GCC-15, Windows MSVC
+- **Cross-platform CI**: Linux Clang-20, Linux GCC-14, macOS Clang, macOS GCC-15, Windows MSVC
 - **AddressSanitizer / UndefinedBehaviorSanitizer** support out of the box
 
 ---
@@ -132,7 +132,7 @@ target_link_libraries(your_target PRIVATE void-numerics::void-numerics)
 
 | Option | Default | Description |
 |---|---|---|
-| `VN_TESTS` | `OFF` | Build the unit test suite |
+| `VN_UNIT_TESTS` | `OFF` | Build the unit test suite |
 | `VN_BENCHMARKS` | `OFF` | Build the benchmark harness |
 | `VN_ASAN` | `OFF` | Enable AddressSanitizer |
 | `VN_UBSAN` | `OFF` | Enable UndefinedBehaviorSanitizer |
@@ -159,9 +159,9 @@ The test suite covers:
 - The full LLVM libc++ `<charconv>` test suite (`to_chars`, `from_chars`, integral-pass, roundtrip)
 
 ```bash
-cmake -S . -B build -DVN_TESTS=TRUE -DCMAKE_BUILD_TYPE=Debug
+cmake -S . -B build -DVN_UNIT_TESTS=TRUE -DCMAKE_BUILD_TYPE=Debug
 cmake --build build
-./build/bin/vn_unit_tests
+./build/bin/vn-unit-tests
 ```
 
 ---

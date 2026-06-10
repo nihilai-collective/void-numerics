@@ -64,14 +64,14 @@
 
 #if defined(__EDG__)
 	#define TEST_COMPILER_EDG
-#elif defined(__clang__)
+#elif VN_COMPILER_CLANG
 	#define TEST_COMPILER_CLANG
 	#if defined(__apple_build_version__)
 		#define TEST_COMPILER_APPLE_CLANG
 	#endif
-#elif defined(_MSC_VER)
+#elif VN_COMPILER_MSVC
 	#define TEST_COMPILER_MSVC
-#elif defined(__GNUC__)
+#elif VN_COMPILER_GCC
 	#define TEST_COMPILER_GCC
 #endif
 
@@ -80,9 +80,9 @@
 	#define TEST_APPLE_CLANG_VER (__apple_build_version__ / 10000)
 #elif defined(__clang_major__)
 	#define TEST_CLANG_VER (__clang_major__ * 100) + __clang_minor__
-#elif defined(__GNUC__)
+#elif VN_COMPILER_GCC
 	// Given GCC XX.YY.ZZ, TEST_GCC_VER is XXYYZZ
-	#define TEST_GCC_VER ((__GNUC__ * 10000) + (__GNUC_MINOR__ * 100) + __GNUC_PATCHLEVEL__)
+	#define TEST_GCC_VER ((VN_COMPILER_GCC * 10000) + (__GCCC_MINOR__ * 100) + __GCCC_PATCHLEVEL__)
 #endif
 
 /* Make a nice name for the standard version */
@@ -301,7 +301,7 @@ namespace test_macros_detail {
 #ifndef TEST_HAS_NO_EXCEPTIONS
 	#define TEST_THROW(...) throw __VA_ARGS__
 #else
-	#if defined(__GNUC__)
+	#if VN_COMPILER_GCC
 		#define TEST_THROW(...) __builtin_abort()
 	#else
 		#include <stdlib.h>
@@ -309,7 +309,7 @@ namespace test_macros_detail {
 	#endif
 #endif
 
-#if defined(__GNUC__) || defined(__clang__)
+#if VN_COMPILER_GCC || VN_COMPILER_CLANG
 // This function can be used to hide some objects from compiler optimizations.
 //
 // For example, this is useful to hide the result of a call to `new` and ensure
@@ -332,7 +332,7 @@ template<class Tp> inline Tp& DoNotOptimize(Tp& value) {
 	#if defined(__AMDGPU__)
 	Tp* tmp = &value;
 	asm volatile("" : "+v"(tmp) : : "memory");
-	#elif defined(__clang__)
+	#elif VN_COMPILER_CLANG
 	asm volatile("" : "+r,m"(value) : : "memory");
 	#else
 	asm volatile("" : "+m,r"(value) : : "memory");
@@ -349,10 +349,10 @@ template<class Tp> inline Tp const& DoNotOptimize(Tp const& value) {
 }
 #endif
 
-#if defined(__GNUC__)
+#if VN_COMPILER_GCC
 	#define TEST_ALWAYS_INLINE __attribute__((always_inline))
 	#define TEST_NOINLINE __attribute__((noinline))
-#elif defined(_MSC_VER)
+#elif VN_COMPILER_MSVC
 	#define TEST_ALWAYS_INLINE __forceinline
 	#define TEST_NOINLINE __declspec(noinline)
 #else
@@ -384,7 +384,7 @@ template<class Tp> inline Tp const& DoNotOptimize(Tp const& value) {
 	#define TEST_SUPPORTS_LIBRARY_INTERNAL_ALLOCATIONS 1
 #endif
 
-#if (defined(TEST_WINDOWS_DLL) && !defined(_MSC_VER)) || defined(__MVS__)
+#if (defined(TEST_WINDOWS_DLL) && !VN_COMPILER_MSVC) || defined(__MVS__)
 	// Normally, a replaced e.g. 'operator new' ends up used if the user code
 	// does a call to e.g. 'operator new[]'; it's enough to replace the base
 	// versions and have it override all of them.
@@ -538,7 +538,7 @@ template<class Tp> inline Tp const& DoNotOptimize(Tp const& value) {
 	#define TEST_CONSTEXPR_OPERATOR_NEW
 #endif
 
-#if defined(_MSC_VER) || __SIZEOF_LONG_DOUBLE__ == __SIZEOF_DOUBLE__
+#if VN_COMPILER_MSVC || __SIZEOF_LONG_DOUBLE__ == __SIZEOF_DOUBLE__
 	#define TEST_LONG_DOUBLE_IS_DOUBLE
 #endif
 

@@ -31,7 +31,7 @@ namespace vn {
 				uint16_t chunk;
 				std::memcpy(&chunk, str, 2);
 				uint16_t diff = chunk ^ repeat_bytes_v<static_cast<uint8_t>(0x30), uint16_t>;
-				return (diff == 0) ? 2 : count_zeros(diff) >> 3;
+				return static_cast<uint64_t>((diff == 0) ? 2 : count_zeros(diff) >> 3);
 			}
 		};
 
@@ -141,7 +141,8 @@ namespace vn {
 			return iter;
 		}
 
-		template<bool negative, integer_types v_type, integer_types v_type_local> VN_FORCE_INLINE const char* finish(const char* it, v_type& value_new, v_type_local value) {
+		template<bool negative, integer_types v_type, integer_types v_type_local>
+		VN_FORCE_INLINE const char* finish(const char* it VN_LIFETIME_BOUND, v_type& value_new, v_type_local value) {
 			VN_ALIGN(64) static constexpr v_type_local zero_val{ 0 };
 			if constexpr (negative) {
 				value_new = static_cast<v_type>(zero_val - value);
@@ -152,7 +153,7 @@ namespace vn {
 		};
 
 		template<bool negative, integer_types v_type>
-		VN_FORCE_INLINE static const char* parse_integer(v_type& value_new, const char* __restrict iter, const char* __restrict end) noexcept {
+		VN_FORCE_INLINE static const char* parse_integer(v_type& value_new, const char* __restrict iter VN_LIFETIME_BOUND, const char* __restrict end) noexcept {
 			using v_type_local = std::make_unsigned_t<v_type>;
 
 			if VN_UNLIKELY (iter >= end) {
@@ -431,7 +432,7 @@ namespace vn {
 		template<int_types v_type> struct from_chars_impl<v_type> {
 			constexpr from_chars_impl() noexcept = default;
 
-			VN_FORCE_INLINE static const char* impl(v_type& value, const char* __restrict iter, const char* __restrict end) noexcept {
+			VN_FORCE_INLINE static const char* impl(v_type& value, const char* __restrict iter VN_LIFETIME_BOUND, const char* __restrict end VN_LIFETIME_BOUND) noexcept {
 				return (iter >= end) ? end
 					: (*iter == '-') ? ((iter + 1 >= end || !vn_is_digit(static_cast<uint8_t>(*(iter + 1)))) ? iter : parse_integer<true>(value, iter + 1, end))
 									 : parse_integer<false>(value, iter, end);
@@ -441,7 +442,7 @@ namespace vn {
 		template<uint_types v_type> struct from_chars_impl<v_type> {
 			constexpr from_chars_impl() noexcept = default;
 
-			VN_FORCE_INLINE static const char* impl(v_type& value, const char* __restrict iter, const char* __restrict end) noexcept {
+			VN_FORCE_INLINE static const char* impl(v_type& value, const char* __restrict iter VN_LIFETIME_BOUND, const char* __restrict end VN_LIFETIME_BOUND) noexcept {
 				return (iter < end) ? (*iter != '-') ? (parse_integer<false>(value, iter, end)) : iter : end;
 			}
 		};

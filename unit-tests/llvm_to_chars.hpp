@@ -86,7 +86,7 @@ namespace to_chars_llvm_tests {
 				test_value(1, b);
 				test_value(xl::lowest(), b);
 				test_value(( xl::max )(), b);
-				test_value(( xl::max )() / 2, b);
+				test_value(v_type(( xl::max )() / v_type(2)), v_type(b));
 			}
 		}
 	};
