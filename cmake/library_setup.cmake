@@ -3,73 +3,29 @@
 # (license text unchanged)
 # cmake/library_setup.cmake
 
-option(VN_ASAN  "Enable AddressSanitizer"            OFF)
-option(VN_UBSAN "Enable UndefinedBehaviorSanitizer"  OFF)
-
-set(VN_ASAN_EFFECTIVE  ${VN_ASAN})
-set(VN_UBSAN_EFFECTIVE ${VN_UBSAN})
-
-if(APPLE AND CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
-    if(VN_ASAN)
-        message(WARNING
-            "VN_ASAN is not supported with GCC on macOS -- ignoring for this "
-            "configure. Re-run with a Clang/AppleClang toolchain to enable.")
-        set(VN_ASAN_EFFECTIVE OFF)
-    endif()
-    if(VN_UBSAN)
-        message(WARNING
-            "VN_UBSAN is not supported with GCC on macOS -- ignoring for this "
-            "configure. Re-run with a Clang/AppleClang toolchain to enable.")
-        set(VN_UBSAN_EFFECTIVE OFF)
-    endif()
-endif()
-
-if(VN_UBSAN_EFFECTIVE AND CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
-    message(WARNING
-        "VN_UBSAN has no effect with MSVC (no equivalent runtime). "
-        "Use Clang-cl or a Clang/GCC build to get UBSan coverage.")
-    set(VN_UBSAN_EFFECTIVE OFF)
-endif()
-
-if(APPLE AND CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
-    set(VN_ASAN_EFFECTIVE OFF)
-    set(VN_UBSAN_EFFECTIVE OFF)
-    message(STATUS "Disabling sanitizers: not supported with GCC on macOS.")
-endif()
-
-set(VN_HOMEBREW_GCC_LIBDIR "")
-if(APPLE AND CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
-    find_program(VN_BREW_EXE brew)
-    if(VN_BREW_EXE)
-        execute_process(
-            COMMAND ${VN_BREW_EXE} --prefix gcc
-            OUTPUT_VARIABLE VN_BREW_GCC_PREFIX
-            OUTPUT_STRIP_TRAILING_WHITESPACE
-            RESULT_VARIABLE VN_BREW_RC
-        )
-        if(VN_BREW_RC EQUAL 0 AND VN_BREW_GCC_PREFIX)
-            file(GLOB VN_GCC_LIB_CANDIDATES
-                "${VN_BREW_GCC_PREFIX}/lib/gcc/*")
-            if(VN_GCC_LIB_CANDIDATES)
-                list(SORT VN_GCC_LIB_CANDIDATES)
-                list(REVERSE VN_GCC_LIB_CANDIDATES)
-                list(GET VN_GCC_LIB_CANDIDATES 0 VN_HOMEBREW_GCC_LIBDIR)
-            endif()
-        endif()
-    endif()
-    if(NOT VN_HOMEBREW_GCC_LIBDIR)
-        message(STATUS
-            "Could not auto-detect Homebrew GCC runtime path; link-time "
-            "rpath for libstdc++ will not be added. Set "
-            "VN_HOMEBREW_GCC_LIBDIR manually if needed.")
-    endif()
-endif()
-
 add_library(${PROJECT_NAME} INTERFACE)
 add_library(${PROJECT_NAME}::${PROJECT_NAME} ALIAS ${PROJECT_NAME})
+
+set(VN_COMPILE_DEFINITIONS
+    VN_ARCH_X64=$<IF:$<OR:$<STREQUAL:${CMAKE_SYSTEM_PROCESSOR},x86_64>,$<STREQUAL:${CMAKE_SYSTEM_PROCESSOR},AMD64>>,1,0>
+    VN_ARCH_ARM64=$<IF:$<OR:$<STREQUAL:${CMAKE_SYSTEM_PROCESSOR},aarch64>,$<STREQUAL:${CMAKE_SYSTEM_PROCESSOR},ARM64>,$<STREQUAL:${CMAKE_SYSTEM_PROCESSOR},arm64>>,1,0>
+    VN_PLATFORM_WINDOWS=$<IF:$<PLATFORM_ID:Windows>,1,0>
+    VN_PLATFORM_LINUX=$<IF:$<PLATFORM_ID:Linux>,1,0>
+    VN_PLATFORM_MAC=$<IF:$<PLATFORM_ID:Darwin>,1,0>
+    VN_COMPILER_CLANG=$<IF:$<OR:$<CXX_COMPILER_ID:Clang>,$<CXX_COMPILER_ID:AppleClang>>,1,0>
+    VN_COMPILER_MSVC=$<IF:$<CXX_COMPILER_ID:MSVC>,1,0>
+    VN_COMPILER_GCC=$<IF:$<CXX_COMPILER_ID:GNU>,1,0>
+    "VN_FORCE_INLINE=$<IF:$<CONFIG:Release>,$<IF:$<CXX_COMPILER_ID:MSVC>,[[msvc::forceinline]] inline,inline __attribute__((always_inline))>,$<IF:$<CXX_COMPILER_ID:MSVC>,[[msvc::noinline]],__attribute__((noinline))>>"
+    "VN_LIFETIME_BOUND=$<IF:$<OR:$<CXX_COMPILER_ID:Clang>,$<CXX_COMPILER_ID:AppleClang>>,[[clang::lifetimebound]],$<IF:$<CXX_COMPILER_ID:MSVC>,[[msvc::lifetimebound]],>>"
+    $<$<CXX_COMPILER_ID:MSVC>:NOMINMAX;WIN32_LEAN_AND_MEAN>
+)
 
 target_include_directories(${PROJECT_NAME}
     INTERFACE
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
         $<INSTALL_INTERFACE:include>
+)
+
+target_compile_definitions(${PROJECT_NAME}
+    INTERFACE ${VN_COMPILE_DEFINITIONS}
 )

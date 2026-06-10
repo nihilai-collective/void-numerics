@@ -16,18 +16,6 @@ namespace vn {
 		concept integer_types = std::integral<base_t<v_type>>;
 
 		template<typename v_type>
-		concept integer8_types = integer_types<v_type> && sizeof(base_t<v_type>) == 1;
-
-		template<typename v_type>
-		concept integer16_types = integer_types<v_type> && sizeof(base_t<v_type>) == 2;
-
-		template<typename v_type>
-		concept integer32_types = integer_types<v_type> && sizeof(base_t<v_type>) == 4;
-
-		template<typename v_type>
-		concept integer64_types = integer_types<v_type> && sizeof(base_t<v_type>) == 8;
-
-		template<typename v_type>
 		concept uint_types = std::unsigned_integral<base_t<v_type>>;
 
 		template<typename v_type>
@@ -69,3 +57,4 @@ namespace vn {
 	}
 
 }
+	

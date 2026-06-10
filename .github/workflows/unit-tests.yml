@@ -1,4 +1,4 @@
-name: Sanitizers
+name: Unit Tests
 on:
   push:
     branches: [ "**" ]
@@ -17,13 +17,13 @@ jobs:
             name: "Ubuntu Clang"
           - os: ubuntu-latest
             compiler: gcc
-            name: "Ubuntu GCC"
+            name: "Ubuntu GNU"
           - os: macos-latest
             compiler: clang
             name: "macOS Clang"
           - os: macos-latest
             compiler: gcc
-            name: "macOS GCC"
+            name: "macOS GNU"
           - os: windows-latest
             compiler: msvc
             name: "Windows MSVC"
@@ -32,7 +32,7 @@ jobs:
     name: Build on ${{ matrix.name }}
     steps:
       - name: Checkout Repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Setup Clang (Ubuntu)
         if: matrix.os == 'ubuntu-latest' && matrix.compiler == 'clang'
@@ -43,14 +43,14 @@ jobs:
           sudo ./llvm.sh $DEV_VERSION
           echo "CXX_BIN=/usr/bin/clang++-$DEV_VERSION" >> $GITHUB_ENV
 
-      - name: Setup GCC (Ubuntu)
+      - name: Setup GNU (Ubuntu)
         if: matrix.os == 'ubuntu-latest' && matrix.compiler == 'gcc'
         run: |
           sudo add-apt-repository ppa:ubuntu-toolchain-r/test -y
           sudo apt-get update
           DEV_VERSION=$(apt-cache search '^g\+\+-[0-9]+$' | awk '{print $1}' | sort -V | tail -n 1 | sed 's/g++-//')
-          sudo apt-get install -y gcc-14 g++-14
-          echo "CXX_BIN=/usr/bin/g++-14" >> $GITHUB_ENV
+          sudo apt-get install -y gcc-$DEV_VERSION g++-$DEV_VERSION
+          echo "CXX_BIN=/usr/bin/g++-$DEV_VERSION" >> $GITHUB_ENV
 
       - name: Setup Clang (macOS)
         if: matrix.os == 'macos-latest' && matrix.compiler == 'clang'
@@ -58,7 +58,7 @@ jobs:
           brew install llvm
           echo "CXX_BIN=$(brew --prefix llvm)/bin/clang++" >> $GITHUB_ENV
 
-      - name: Setup GCC (macOS)
+      - name: Setup GNU (macOS)
         if: matrix.os == 'macos-latest' && matrix.compiler == 'gcc'
         run: |
           brew install gcc
@@ -71,29 +71,27 @@ jobs:
 
       - name: Configure CMake (Unix)
         if: runner.os != 'Windows'
-        run: cmake -S . -B ./Build -DCMAKE_BUILD_TYPE=Debug -DCMAKE_CXX_COMPILER=${{ env.CXX_BIN }} -DVN_BENCHMARKS=TRUE -DVN_TESTS=TRUE -DVN_ASAN=TRUE -DVN_UBSAN=TRUE
+        run: cmake -S . -B ./Build -DCMAKE_BUILD_TYPE=Debug -DCMAKE_CXX_COMPILER=${{ env.CXX_BIN }} -DVN_UNIT_TESTS=TRUE -DVN_ASAN=TRUE -DVN_UBSAN=TRUE
 
       - name: Configure CMake (Windows)
         if: runner.os == 'Windows'
-        run: cmake -S . -B ./Build -DCMAKE_BUILD_TYPE=Debug -DCMAKE_CXX_COMPILER=cl -DCMAKE_C_COMPILER=cl -DVN_BENCHMARKS=TRUE -DVN_TESTS=TRUE -DVN_ASAN=TRUE -DVN_UBSAN=TRUE
+        run: cmake -S . -B ./Build -DCMAKE_BUILD_TYPE=Debug  -DCMAKE_CXX_COMPILER=${{ matrix.cmake_cxx }} -DVN_UNIT_TESTS=TRUE -DVN_ASAN=TRUE -DVN_UBSAN=TRUE
 
       - name: Build
-        run: cmake --build ./Build --config=Debug -v
+        run: cmake --build ./Build --config=Debug  -v
 
       - name: Install
         run: |
           ${{ runner.os != 'Windows' && 'sudo' || '' }} cmake --install ./Build --config=Debug 
-    
-      - name: Run the Test (Unix)
-        if: matrix.os != 'windows-latest'
+
+      - name: Run (Unix)
+        if: runner.os != 'Windows'
         run: |
-            sudo chmod +x /usr/local/bin/vn_unit_tests
-            sudo /usr/local/bin/vn_unit_tests
-            sudo chmod +x /usr/local/bin/vn_benchmarks    
-            sudo /usr/local/bin/vn_benchmarks
-    
-      - name: Run the Test (Windows)
-        if: matrix.os == 'windows-latest'
+          sudo chmod +x /usr/local/bin/vn-unit-tests
+          /usr/local/bin/vn-unit-tests
+
+      - name: Run (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
         run: |
-            & "C:/Program Files (x86)/void-numerics/bin/vn_unit_tests.exe"
-            & "C:/Program Files (x86)/void-numerics/bin/vn_benchmarks.exe"
+          & "C:/Program Files (x86)/vn/bin/vn-unit-tests.exe"

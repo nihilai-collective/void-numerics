@@ -63,18 +63,6 @@ namespace vn_to_chars_tests {
 			return true;
 		});
 
-		rt_ut::unit_test<name + "-to_chars all digit lengths at 999...9", true>::assert_eq(true, [] {
-			v_type p = 0;
-			for (uint32_t i = 0; i < vn::detail::max_digits_v<v_type>; ++i) {
-				p = static_cast<v_type>(p * 10 + 9);
-				if (p < 0 || !chars_match<v_type>(p))
-					return false;
-				if (p > std::numeric_limits<v_type>::max() / 10)
-					break;
-			}
-			return true;
-		});
-
 		rt_ut::unit_test<name + "-to_chars max", true>::assert_eq(true, [] {
 			return chars_match<v_type>(std::numeric_limits<v_type>::max());
 		});

@@ -92,6 +92,28 @@ namespace vn_from_chars_tests {
 		return s;
 	}
 
+	template<vn::detail::integer_types v_type> inline bool poisoned_agree(const std::string& s) {
+		static constexpr v_type poison = static_cast<v_type>(0xA5A5A5A5A5A5A5A5ull);
+		v_type ref{ poison };
+		v_type got{ poison };
+		const char* first = s.data();
+		const char* last  = s.data() + s.size();
+		auto r_ref		  = std::from_chars(first, last, ref);
+		if (r_ref.ec == std::errc::result_out_of_range)
+			return true;
+		auto r_got		  = vn::from_chars(first, last, got);
+		const bool ptr_ok = (r_ref.ptr == r_got.ptr);
+		const bool val_ok = (r_ref.ec == std::errc{}) ? (ref == got) : (got == poison);
+		if (!ptr_ok || !val_ok) {
+			std::cout << "input=[";
+			for (char c: s)
+				std::cout << (c >= 32 && c < 127 ? c : '?');
+			std::cout << "] size=" << s.size() << " ref_off=" << (r_ref.ptr - first) << " got_off=" << (r_got.ptr - first) << " ref_ec=" << static_cast<int>(r_ref.ec)
+					  << " ref=" << +ref << " got=" << +got << " ptr_ok=" << ptr_ok << " val_ok=" << val_ok << std::endl;
+		}
+		return ptr_ok && val_ok;
+	}
+
 	template<rt_ut::string_literal name, vn::detail::integer_types v_type> void test_function() {
 		rt_ut::unit_test<name + "-overflow max plus one", true>::assert_eq(true, [] {
 			return agree<v_type>(increment_decimal(digits_of(std::numeric_limits<v_type>::max())));
@@ -501,6 +523,88 @@ namespace vn_from_chars_tests {
 					*end.ptr = '\0';
 					if (ref_val<v_type>(buf) != vn_val<v_type>(buf))
 						return false;
+				}
+				return true;
+			});
+		}
+
+		rt_ut::unit_test<name + "-from_chars poisoned output every length every terminator", true>::assert_eq(true, [] {
+			static constexpr const char* terminators[] = { ",", "]", "}", " ", ".", "e", "E", "+", "-", "\t", "\n", "\"", ":", "/", "\0abc", "x" };
+			for (uint64_t len = 1; len <= vn::detail::max_digits_v<v_type>; ++len) {
+				for (const char* term: terminators) {
+					std::string s;
+					s.reserve(static_cast<std::size_t>(len) + 4);
+					s.push_back('1');
+					for (uint64_t i = 1; i < len; ++i)
+						s.push_back(static_cast<char>('0' + (i % 9) + 1));
+					s += term;
+					if (!poisoned_agree<v_type>(s))
+						return false;
+				}
+			}
+			return true;
+		});
+
+		rt_ut::unit_test<name + "-from_chars poisoned output leading zeros then terminator", true>::assert_eq(true, [] {
+			for (uint64_t z = 1; z <= 20; ++z) {
+				for (uint64_t len = 1; len <= vn::detail::max_digits_v<v_type>; ++len) {
+					std::string s(static_cast<std::size_t>(z), '0');
+					s.push_back('7');
+					for (uint64_t i = 1; i < len; ++i)
+						s.push_back('3');
+					s.push_back(',');
+					if (!poisoned_agree<v_type>(s))
+						return false;
+				}
+			}
+			return true;
+		});
+
+		rt_ut::unit_test<name + "-from_chars poisoned output exact-end no terminator", true>::assert_eq(true, [] {
+			for (uint64_t len = 1; len <= vn::detail::max_digits_v<v_type>; ++len) {
+				std::string s;
+				s.push_back('9');
+				for (uint64_t i = 1; i < len; ++i)
+					s.push_back(static_cast<char>('0' + (i % 10)));
+				if (!poisoned_agree<v_type>(s))
+					return false;
+			}
+			return true;
+		});
+
+		rt_ut::unit_test<name + "-from_chars poisoned output fuzz mixed terminators", true>::assert_eq(true, [] {
+			std::mt19937_64 rng{ 0xC2B2AE3D27D4EB4Full ^ name.size() ^ sizeof(v_type) };
+			std::uniform_int_distribution<uint64_t> digit{ 0, 9 };
+			std::uniform_int_distribution<uint64_t> width{ 1, static_cast<uint64_t>(vn::detail::max_digits_v<v_type>) + 3 };
+			std::uniform_int_distribution<uint64_t> tail{ 0, 255 };
+			for (uint64_t iter = 0; iter < 500000; ++iter) {
+				const uint64_t len = width(rng);
+				std::string s;
+				s.push_back(static_cast<char>('1' + (digit(rng) % 9)));
+				for (uint64_t i = 1; i < len; ++i)
+					s.push_back(static_cast<char>('0' + digit(rng)));
+				const char c = static_cast<char>(tail(rng));
+				if (c < '0' || c > '9')
+					s.push_back(c);
+				if (!poisoned_agree<v_type>(s))
+					return false;
+			}
+			return true;
+		});
+
+		if constexpr (vn::detail::int_types<v_type>) {
+			rt_ut::unit_test<name + "-from_chars poisoned output negative every length every terminator", true>::assert_eq(true, [] {
+				static constexpr const char* terminators[] = { ",", "]", "}", " ", ".", "e", "x" };
+				for (uint64_t len = 1; len <= vn::detail::max_digits_v<v_type> + 1; ++len) {
+					for (const char* term: terminators) {
+						std::string s = "-";
+						s.push_back('1');
+						for (uint64_t i = 1; i < len; ++i)
+							s.push_back(static_cast<char>('0' + (i % 9) + 1));
+						s += term;
+						if (!poisoned_agree<v_type>(s))
+							return false;
+					}
 				}
 				return true;
 			});

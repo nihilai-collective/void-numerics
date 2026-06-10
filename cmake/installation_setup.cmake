@@ -14,18 +14,9 @@ configure_package_config_file(
 	INSTALL_DESTINATION share/void-numerics
 )
 
-set(VERSION_FILE_NAME ${PROJECT_NAME}ConfigVersion.cmake)
-
-write_basic_package_version_file(
-	${CMAKE_CURRENT_BINARY_DIR}/${VERSION_FILE_NAME}
-	VERSION ${PRODUCT_VERSION}
-	COMPATIBILITY AnyNewerVersion
-)
-
 install(
 	FILES
 	${CMAKE_CURRENT_BINARY_DIR}/${CONFIG_FILE_NAME}
-	${CMAKE_CURRENT_BINARY_DIR}/${VERSION_FILE_NAME}
 	DESTINATION share/void-numerics
 )
 

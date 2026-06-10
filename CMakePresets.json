@@ -11,7 +11,7 @@
       "cacheVariables": {
         "CMAKE_C_COMPILER": "cl.exe",
         "CMAKE_CXX_COMPILER": "cl.exe",
-        "VN_TESTS": true
+        "VN_UNIT_TESTS": true
       }
     },
     {
