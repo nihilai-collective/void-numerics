@@ -56,7 +56,11 @@ FetchContent_Declare(
 FetchContent_MakeAvailable(rt-ut)
 
 add_executable(vn_unit_tests "void-numerics.cpp")
-target_link_libraries(vn_unit_tests PUBLIC void-numerics::void-numerics rt-ut::rt-ut)
+target_link_libraries(vn_unit_tests PUBLIC
+    void-numerics::void-numerics
+    void-numerics-common-options
+    rt-ut::rt-ut
+)
 target_compile_options(vn_unit_tests PUBLIC ${VN_COMPILE_OPTIONS})
 target_link_options(vn_unit_tests PUBLIC ${VN_LINK_OPTIONS})
 

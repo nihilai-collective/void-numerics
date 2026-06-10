@@ -45,6 +45,7 @@ target_include_directories(jeaiii_itoa INTERFACE ${jeaiii_itoa_SOURCE_DIR}/itoa)
 add_executable(vn_benchmarks "void-numerics.cpp")
 target_link_libraries(vn_benchmarks
   void-numerics::void-numerics
+  void-numerics-common-options
   benchmarksuite::benchmarksuite
   fmt::fmt
   jeaiii_itoa

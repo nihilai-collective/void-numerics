@@ -34,6 +34,9 @@ include(cmake/library_setup.cmake)
 
 include(cmake/installation_setup.cmake)
 
+if(VN_TESTS OR VN_BENCHMARKS)
+    include(cmake/common_options.cmake)
+endif()
 if(VN_TESTS)
     add_subdirectory(src/unit-tests)
 endif()
