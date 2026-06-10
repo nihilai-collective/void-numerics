@@ -51,13 +51,9 @@
 	#define VN_PLATFORM_MACOS 0
 #endif
 
-#if !defined(VN_DEBUG)
-	#define VN_DEBUG 0
-#endif
-
 #define VN_ALIGN(x) alignas(x)
 
-#if VN_DEBUG
+#if !defined(NDEBUG)
 	#if VN_COMPILER_MSVC
 		#define VN_FORCE_INLINE inline [[msvc::noinline]]
 	#elif VN_COMPILER_GNU || VN_COMPILER_CLANG
