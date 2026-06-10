@@ -1,16 +1,13 @@
-// SPDX-License-Identifier: MIT
-// Copyright (c) 2026 Nihilai Collective Corp
-// unit-tests/str_to_i.hpp
+/*
+ * SPDX-License-Identifier: MIT
+ * Copyright (c) 2026 Nihilai Collective Corp
+ * https://github.com/nihilai-collective/void-numerics
+ * unit-tests/str_to_i.hpp
+ */
 
 #pragma once
 
-#include <void-numerics>
-#include <iostream>
-#include <charconv>
-#include <random>
-#include <string>
-#include <cstring>
-#include <system_error>
+#include "common.hpp"
 
 namespace vn_from_chars_tests {
 
@@ -84,12 +81,38 @@ namespace vn_from_chars_tests {
 			uint64_t d = static_cast<uint64_t>(s[i] - '0') + carry;
 			s[i]	   = static_cast<char>('0' + (d % 10));
 			carry	   = d / 10;
-			if (!carry)
+			if (!carry) {
 				break;
+			}
 		}
-		if (carry)
+		if (carry) {
 			s.insert(s.begin() + static_cast<std::ptrdiff_t>(lo), '1');
+		}
 		return s;
+	}
+
+	template<vn::detail::integer_types v_type> inline bool poisoned_agree(const std::string& s) {
+		static constexpr v_type poison = static_cast<v_type>(0xA5A5A5A5A5A5A5A5ull);
+		v_type ref{ poison };
+		v_type got{ poison };
+		const char* first = s.data();
+		const char* last  = s.data() + s.size();
+		auto r_ref		  = std::from_chars(first, last, ref);
+		if (r_ref.ec == std::errc::result_out_of_range) {
+			return true;
+		}
+		auto r_got		  = vn::from_chars(first, last, got);
+		const bool ptr_ok = (r_ref.ptr == r_got.ptr);
+		const bool val_ok = (r_ref.ec == std::errc{}) ? (ref == got) : (got == poison);
+		if (!ptr_ok || !val_ok) {
+			std::cout << "input=[";
+			for (char c: s) {
+				std::cout << (c >= 32 && c < 127 ? c : '?');
+			}
+			std::cout << "] size=" << s.size() << " ref_off=" << (r_ref.ptr - first) << " got_off=" << (r_got.ptr - first) << " ref_ec=" << static_cast<int>(r_ref.ec)
+					  << " ref=" << +ref << " got=" << +got << " ptr_ok=" << ptr_ok << " val_ok=" << val_ok << std::endl;
+		}
+		return ptr_ok && val_ok;
 	}
 
 	template<rt_ut::string_literal name, vn::detail::integer_types v_type> void test_function() {
@@ -129,8 +152,9 @@ namespace vn_from_chars_tests {
 			for (uint64_t z = 1; z <= 20; ++z) {
 				std::string s(static_cast<std::size_t>(z), '0');
 				s += increment_decimal(digits_of(std::numeric_limits<v_type>::max()));
-				if (!agree<v_type>(s))
+				if (!agree<v_type>(s)) {
 					return false;
+				}
 			}
 			return true;
 		});
@@ -143,15 +167,18 @@ namespace vn_from_chars_tests {
 			std::uniform_int_distribution<uint64_t> width{ static_cast<uint64_t>(w == 0 ? 1 : w - 1), static_cast<uint64_t>(w + 2) };
 			for (uint64_t iter = 0; iter < 2000000; ++iter) {
 				uint64_t len = width(rng);
-				if (len < 1)
+				if (len < 1) {
 					len = 1;
+				}
 				std::string s;
 				s.reserve(static_cast<std::size_t>(len));
 				s.push_back(static_cast<char>('1' + (digit(rng) % 9)));
-				for (uint64_t i = 1; i < len; ++i)
+				for (uint64_t i = 1; i < len; ++i) {
 					s.push_back(static_cast<char>('0' + digit(rng)));
-				if (!agree<v_type>(s))
+				}
+				if (!agree<v_type>(s)) {
 					return false;
+				}
 			}
 			return true;
 		});
@@ -180,14 +207,17 @@ namespace vn_from_chars_tests {
 				std::uniform_int_distribution<uint64_t> width{ static_cast<uint64_t>(w == 0 ? 2 : w - 1), static_cast<uint64_t>(w + 2) };
 				for (uint64_t iter = 0; iter < 2000000; ++iter) {
 					uint64_t len = width(rng);
-					if (len < 2)
+					if (len < 2) {
 						len = 2;
+					}
 					std::string s = "-";
 					s.push_back(static_cast<char>('1' + (digit(rng) % 9)));
-					for (uint64_t i = 1; i < len - 1; ++i)
+					for (uint64_t i = 1; i < len - 1; ++i) {
 						s.push_back(static_cast<char>('0' + digit(rng)));
-					if (!agree<v_type>(s))
+					}
+					if (!agree<v_type>(s)) {
 						return false;
+					}
 				}
 				return true;
 			});
@@ -203,8 +233,9 @@ namespace vn_from_chars_tests {
 					uint64_t ref{}, got{};
 					std::from_chars(s.data(), s.data() + s.size(), ref);
 					vn::from_chars(s.data(), s.data() + s.size(), got);
-					if (ref != got)
+					if (ref != got) {
 						return false;
+					}
 				}
 			}
 			return true;
@@ -234,8 +265,9 @@ namespace vn_from_chars_tests {
 		rt_ut::unit_test<name + "-from_chars single digits 1-9", true>::assert_eq(true, [] {
 			for (char c = '1'; c <= '9'; ++c) {
 				char s[2]{ c, '\0' };
-				if (ref_val<v_type>(s) != vn_val<v_type>(s))
+				if (ref_val<v_type>(s) != vn_val<v_type>(s)) {
 					return false;
+				}
 			}
 			return true;
 		});
@@ -246,8 +278,9 @@ namespace vn_from_chars_tests {
 				auto v = static_cast<v_type>(v_type{ 1 } << i);
 				auto r = std::to_chars(buf, buf + 32, v);
 				*r.ptr = '\0';
-				if (ref_val<v_type>(buf) != vn_val<v_type>(buf))
+				if (ref_val<v_type>(buf) != vn_val<v_type>(buf)) {
 					return false;
+				}
 			}
 			return true;
 		});
@@ -258,10 +291,12 @@ namespace vn_from_chars_tests {
 			for (uint32_t i = 0; i < vn::detail::max_digits_v<v_type>; ++i) {
 				auto r = std::to_chars(buf, buf + 32, p);
 				*r.ptr = '\0';
-				if (ref_val<v_type>(buf) != vn_val<v_type>(buf))
+				if (ref_val<v_type>(buf) != vn_val<v_type>(buf)) {
 					return false;
-				if (p > std::numeric_limits<v_type>::max() / 10)
+				}
+				if (p > std::numeric_limits<v_type>::max() / 10) {
 					break;
+				}
 				p *= 10;
 			}
 			return true;
@@ -274,8 +309,9 @@ namespace vn_from_chars_tests {
 				p	   = static_cast<v_type>(p * 10 + 1);
 				auto r = std::to_chars(buf, buf + 32, p);
 				*r.ptr = '\0';
-				if (ref_val<v_type>(buf) != vn_val<v_type>(buf))
+				if (ref_val<v_type>(buf) != vn_val<v_type>(buf)) {
 					return false;
+				}
 			}
 			return true;
 		});
@@ -287,10 +323,12 @@ namespace vn_from_chars_tests {
 				p	   = static_cast<v_type>(p * 10 + 9);
 				auto r = std::to_chars(buf, buf + 32, p);
 				*r.ptr = '\0';
-				if (ref_val<v_type>(buf) != vn_val<v_type>(buf))
+				if (ref_val<v_type>(buf) != vn_val<v_type>(buf)) {
 					return false;
-				if (p > std::numeric_limits<v_type>::max() / 10)
+				}
+				if (p > std::numeric_limits<v_type>::max() / 10) {
 					break;
+				}
 			}
 			return true;
 		});
@@ -373,10 +411,12 @@ namespace vn_from_chars_tests {
 				do {
 					auto r = std::to_chars(buf, buf + 32, v);
 					*r.ptr = '\0';
-					if (ref_val<v_type>(buf) != vn_val<v_type>(buf))
+					if (ref_val<v_type>(buf) != vn_val<v_type>(buf)) {
 						return false;
-					if (v == std::numeric_limits<v_type>::max())
+					}
+					if (v == std::numeric_limits<v_type>::max()) {
 						break;
+					}
 					++v;
 				} while (true);
 				return true;
@@ -415,8 +455,9 @@ namespace vn_from_chars_tests {
 					auto v = static_cast<v_type>(-(v_type{ 1 } << i));
 					auto r = std::to_chars(buf, buf + 32, v);
 					*r.ptr = '\0';
-					if (ref_val<v_type>(buf) != vn_val<v_type>(buf))
+					if (ref_val<v_type>(buf) != vn_val<v_type>(buf)) {
 						return false;
+					}
 				}
 				return true;
 			});
@@ -427,10 +468,12 @@ namespace vn_from_chars_tests {
 				for (uint32_t i = 0; i < vn::detail::max_digits_v<v_type>; ++i) {
 					auto r = std::to_chars(buf, buf + 32, p);
 					*r.ptr = '\0';
-					if (ref_val<v_type>(buf) != vn_val<v_type>(buf))
+					if (ref_val<v_type>(buf) != vn_val<v_type>(buf)) {
 						return false;
-					if (p < std::numeric_limits<v_type>::min() / 10)
+					}
+					if (p < std::numeric_limits<v_type>::min() / 10) {
 						break;
+					}
 					p *= 10;
 				}
 				return true;
@@ -443,10 +486,12 @@ namespace vn_from_chars_tests {
 					p	   = static_cast<v_type>(p * 10 - 1);
 					auto r = std::to_chars(buf, buf + 32, p);
 					*r.ptr = '\0';
-					if (ref_val<v_type>(buf) != vn_val<v_type>(buf))
+					if (ref_val<v_type>(buf) != vn_val<v_type>(buf)) {
 						return false;
-					if (p < std::numeric_limits<v_type>::min() / 10)
+					}
+					if (p < std::numeric_limits<v_type>::min() / 10) {
 						break;
+					}
 				}
 				return true;
 			});
@@ -481,8 +526,9 @@ namespace vn_from_chars_tests {
 				char buf[32]{};
 				auto end = std::to_chars(buf, buf + 32, v);
 				*end.ptr = '\0';
-				if (ref_val<v_type>(buf) != vn_val<v_type>(buf))
+				if (ref_val<v_type>(buf) != vn_val<v_type>(buf)) {
 					return false;
+				}
 			}
 			return true;
 		});
@@ -499,18 +545,271 @@ namespace vn_from_chars_tests {
 					char buf[32]{};
 					auto end = std::to_chars(buf, buf + 32, v);
 					*end.ptr = '\0';
-					if (ref_val<v_type>(buf) != vn_val<v_type>(buf))
+					if (ref_val<v_type>(buf) != vn_val<v_type>(buf)) {
 						return false;
+					}
 				}
 				return true;
 			});
 		}
+
+		rt_ut::unit_test<name + "-from_chars poisoned output every length every terminator", true>::assert_eq(true, [] {
+			static constexpr const char* terminators[] = { ",", "]", "}", " ", ".", "e", "E", "+", "-", "\t", "\n", "\"", ":", "/", "\0abc", "x" };
+			for (uint64_t len = 1; len <= vn::detail::max_digits_v<v_type>; ++len) {
+				for (const char* term: terminators) {
+					std::string s;
+					s.reserve(static_cast<std::size_t>(len) + 4);
+					s.push_back('1');
+					for (uint64_t i = 1; i < len; ++i) {
+						s.push_back(static_cast<char>('0' + (i % 9) + 1));
+					}
+					s += term;
+					if (!poisoned_agree<v_type>(s)) {
+						return false;
+					}
+				}
+			}
+			return true;
+		});
+
+		rt_ut::unit_test<name + "-from_chars poisoned output leading zeros then terminator", true>::assert_eq(true, [] {
+			for (uint64_t z = 1; z <= 20; ++z) {
+				for (uint64_t len = 1; len <= vn::detail::max_digits_v<v_type>; ++len) {
+					std::string s(static_cast<std::size_t>(z), '0');
+					s.push_back('7');
+					for (uint64_t i = 1; i < len; ++i) {
+						s.push_back('3');
+					}
+					s.push_back(',');
+					if (!poisoned_agree<v_type>(s)) {
+						return false;
+					}
+				}
+			}
+			return true;
+		});
+
+		rt_ut::unit_test<name + "-from_chars poisoned output exact-end no terminator", true>::assert_eq(true, [] {
+			for (uint64_t len = 1; len <= vn::detail::max_digits_v<v_type>; ++len) {
+				std::string s;
+				s.push_back('9');
+				for (uint64_t i = 1; i < len; ++i) {
+					s.push_back(static_cast<char>('0' + (i % 10)));
+				}
+				if (!poisoned_agree<v_type>(s)) {
+					return false;
+				}
+			}
+			return true;
+		});
+
+		rt_ut::unit_test<name + "-from_chars poisoned output fuzz mixed terminators", true>::assert_eq(true, [] {
+			std::mt19937_64 rng{ 0xC2B2AE3D27D4EB4Full ^ name.size() ^ sizeof(v_type) };
+			std::uniform_int_distribution<uint64_t> digit{ 0, 9 };
+			std::uniform_int_distribution<uint64_t> width{ 1, static_cast<uint64_t>(vn::detail::max_digits_v<v_type>) + 3 };
+			std::uniform_int_distribution<uint64_t> tail{ 0, 255 };
+			for (uint64_t iter = 0; iter < 500000; ++iter) {
+				const uint64_t len = width(rng);
+				std::string s;
+				s.push_back(static_cast<char>('1' + (digit(rng) % 9)));
+				for (uint64_t i = 1; i < len; ++i) {
+					s.push_back(static_cast<char>('0' + digit(rng)));
+				}
+				const char c = static_cast<char>(tail(rng));
+				if (c < '0' || c > '9') {
+					s.push_back(c);
+				}
+				if (!poisoned_agree<v_type>(s)) {
+					return false;
+				}
+			}
+			return true;
+		});
+
+		if constexpr (vn::detail::int_types<v_type>) {
+			rt_ut::unit_test<name + "-from_chars poisoned output negative every length every terminator", true>::assert_eq(true, [] {
+				static constexpr const char* terminators[] = { ",", "]", "}", " ", ".", "e", "x" };
+				for (uint64_t len = 1; len <= vn::detail::max_digits_v<v_type> + 1; ++len) {
+					for (const char* term: terminators) {
+						std::string s = "-";
+						s.push_back('1');
+						for (uint64_t i = 1; i < len; ++i) {
+							s.push_back(static_cast<char>('0' + (i % 9) + 1));
+						}
+						s += term;
+						if (!poisoned_agree<v_type>(s)) {
+							return false;
+						}
+					}
+				}
+				return true;
+			});
+		}
+
+		rt_ut::unit_test<name + "-overflow errc verification", true>::assert_eq(true, [] {
+			std::string s = digits_of(std::numeric_limits<v_type>::max()) + "999";
+			v_type v{};
+			auto res = vn::from_chars(s.data(), s.data() + s.size(), v);
+			if (res.ec != std::errc::result_out_of_range) {
+				return false;
+			}
+			if constexpr (vn::detail::int_types<v_type>) {
+				std::string neg = "-" + digits_of(std::numeric_limits<v_type>::max()) + "999";
+				auto neg_res	= vn::from_chars(neg.data(), neg.data() + neg.size(), v);
+				if (neg_res.ec != std::errc::result_out_of_range) {
+					return false;
+				}
+			}
+			return true;
+		});
+
+		rt_ut::unit_test<name + "-trim leading zeros uninitialized chunk exposure", true>::assert_eq(true, [] {
+			for (std::size_t z: { std::size_t{ 3 }, std::size_t{ 5 }, std::size_t{ 6 }, std::size_t{ 7 } }) {
+				std::string s(z, '0');
+				s += "1";
+				v_type v{};
+				auto res = vn::from_chars(s.data(), s.data() + s.size(), v);
+				if (res.ec != std::errc{} || v != 1 || res.ptr != s.data() + s.size()) {
+					return false;
+				}
+			}
+			return true;
+		});
+
+		rt_ut::unit_test<name + "-trim leading zeros followed by non-digits", true>::assert_eq(true, [] {
+			for (std::size_t z = 1; z <= 8; ++z) {
+				std::string s(z, '0');
+				s += "abc";
+				v_type v{ 42 };
+				auto res = vn::from_chars(s.data(), s.data() + s.size(), v);
+				if (res.ec != std::errc{} || v != 0 || res.ptr != s.data() + z) {
+					return false;
+				}
+			}
+			return true;
+		});
+
+		rt_ut::unit_test<name + "-dirty stack zero trim 3 5 6 7", true>::assert_eq(true, [] {
+			auto poison_stack = [](uint8_t pattern) {
+				volatile uint8_t dummy[512];
+				for (std::size_t i = 0; i < sizeof(dummy); ++i) {
+					dummy[i] = pattern;
+				}
+			};
+
+			for (uint8_t pattern: { uint8_t{ 0x00 }, uint8_t{ 0x30 }, uint8_t{ 0x55 }, uint8_t{ 0xAA }, uint8_t{ 0xFF } }) {
+				for (std::size_t z: { std::size_t{ 3 }, std::size_t{ 5 }, std::size_t{ 6 }, std::size_t{ 7 } }) {
+					poison_stack(pattern);
+					std::string s(z, '0');
+					s += "7";
+					v_type v{ 99 };
+					auto res = vn::from_chars(s.data(), s.data() + s.size(), v);
+					if (res.ec != std::errc{} || v != 7 || res.ptr != s.data() + s.size()) {
+						return false;
+					}
+				}
+			}
+			return true;
+		});
+
+		rt_ut::unit_test<name + "-partial parse non-digit termination", true>::assert_eq(true, [] {
+			std::string s = "12x99";
+			v_type v{};
+			auto res = vn::from_chars(s.data(), s.data() + s.size(), v);
+			if (res.ec != std::errc{}) {
+				return false;
+			}
+			if (res.ptr != s.data() + 2) {
+				return false;
+			}
+			if (v != static_cast<v_type>(12)) {
+				return false;
+			}
+			return true;
+		});
+
+		rt_ut::unit_test<name + "-dirty stack zero trim 8 16 loop path", true>::assert_eq(true, [] {
+			auto poison_stack = [](uint8_t pattern) {
+				volatile uint8_t dummy[512];
+				for (std::size_t i = 0; i < sizeof(dummy); ++i) {
+					dummy[i] = pattern;
+				}
+			};
+			for (uint8_t pattern: { uint8_t{ 0x00 }, uint8_t{ 0x30 }, uint8_t{ 0x55 }, uint8_t{ 0xAA }, uint8_t{ 0xFF } }) {
+				for (std::size_t z: { std::size_t{ 8 }, std::size_t{ 9 }, std::size_t{ 12 }, std::size_t{ 15 }, std::size_t{ 16 }, std::size_t{ 23 } }) {
+					poison_stack(pattern);
+					std::string s(z, '0');
+					s += "7";
+					v_type v{ 99 };
+					auto res = vn::from_chars(s.data(), s.data() + s.size(), v);
+					if (res.ec != std::errc{} || v != static_cast<v_type>(7) || res.ptr != s.data() + s.size()) {
+						return false;
+					}
+				}
+			}
+			return true;
+		});
+
+		rt_ut::unit_test<name + "-all zeros exact widths", true>::assert_eq(true, [] {
+			for (std::size_t z: { std::size_t{ 1 }, std::size_t{ 2 }, std::size_t{ 3 }, std::size_t{ 4 }, std::size_t{ 5 }, std::size_t{ 6 }, std::size_t{ 7 }, std::size_t{ 8 },
+					 std::size_t{ 9 }, std::size_t{ 15 }, std::size_t{ 16 }, std::size_t{ 17 }, std::size_t{ 24 } }) {
+				std::string s(z, '0');
+				v_type v{ 99 };
+				auto res = vn::from_chars(s.data(), s.data() + s.size(), v);
+				if (res.ec != std::errc{} || v != static_cast<v_type>(0) || res.ptr != s.data() + s.size()) {
+					return false;
+				}
+			}
+			return true;
+		});
+
+		rt_ut::unit_test<name + "-zeros then non-digit", true>::assert_eq(true, [] {
+			for (std::size_t z: { std::size_t{ 1 }, std::size_t{ 4 }, std::size_t{ 7 }, std::size_t{ 8 }, std::size_t{ 12 }, std::size_t{ 16 } }) {
+				std::string s(z, '0');
+				s += "x";
+				v_type v{ 99 };
+				auto res = vn::from_chars(s.data(), s.data() + s.size(), v);
+				if (res.ec != std::errc{} || v != static_cast<v_type>(0) || res.ptr != s.data() + static_cast<std::ptrdiff_t>(z)) {
+					return false;
+				}
+			}
+			return true;
+		});
+
+		rt_ut::unit_test<name + "-zeros embedded in value", true>::assert_eq(true, [] {
+			std::string s = "00000000102";
+			v_type v{};
+			auto res = vn::from_chars(s.data(), s.data() + s.size(), v);
+			if constexpr (sizeof(v_type) < 2) {
+				if (res.ec != std::errc{} || v != static_cast<v_type>(102) || res.ptr != s.data() + s.size()) {
+					return false;
+				}
+			} else {
+				if (res.ec != std::errc{} || v != static_cast<v_type>(102) || res.ptr != s.data() + s.size()) {
+					return false;
+				}
+			}
+			return true;
+		});
+
+		rt_ut::unit_test<name + "-exact buffer end no sentinel", true>::assert_eq(true, [] {
+			for (std::size_t z: { std::size_t{ 7 }, std::size_t{ 8 }, std::size_t{ 9 }, std::size_t{ 16 } }) {
+				std::vector<char> buf(z, '0');
+				buf.back() = '5';
+				v_type v{ 99 };
+				auto res = vn::from_chars(buf.data(), buf.data() + buf.size(), v);
+				if (res.ec != std::errc{} || v != static_cast<v_type>(5) || res.ptr != buf.data() + buf.size()) {
+					return false;
+				}
+			}
+			return true;
+		});
 	}
 }
 
-template<vn::detail::conversion_classes> struct tests;
+template<detail::conversion_classes> struct tests;
 
-template<> struct tests<vn::detail::conversion_classes::str_to_i> {
+template<> struct tests<detail::conversion_classes::str_to_i> {
 	static void impl() {
 		vn_from_chars_tests::test_function<"uint8", uint8_t>();
 		vn_from_chars_tests::test_function<"int8", int8_t>();
@@ -518,7 +817,7 @@ template<> struct tests<vn::detail::conversion_classes::str_to_i> {
 		vn_from_chars_tests::test_function<"int16", int16_t>();
 		vn_from_chars_tests::test_function<"uint32", uint32_t>();
 		vn_from_chars_tests::test_function<"int32", int32_t>();
-		vn_from_chars_tests::test_function<"uint64_t", uint64_t>();
+		vn_from_chars_tests::test_function<"uint64", uint64_t>();
 		vn_from_chars_tests::test_function<"int64", int64_t>();
 	}
 };

@@ -10,23 +10,7 @@
 #ifndef SUPPORT_CHARCONV_TEST_HELPERS_H
 #define SUPPORT_CHARCONV_TEST_HELPERS_H
 
-#include <assert.h>
-#include <cerrno>
-#include <charconv>
-#include <cstddef>
-#include <ostream>
-#include <string>
-#include <limits>
-#include <numeric>
-#include <string.h>
-#include <stdlib.h>
-#include <type_traits>
-
-#include <void-numerics>
-
-#include <rt-ut-incl/index.hpp>
-
-#include "test_macros.hpp"
+#include "common.hpp"
 
 #if TEST_STD_VER < 11
 	#error This file requires C++11
@@ -74,13 +58,14 @@ template<typename X> struct to_chars_test_base {
 		constexpr std::size_t len = N - 1;
 		static_assert(len > 0, "expected output won't be empty");
 
-		if (!fits_in<X>(v))
+		if (!fits_in<X>(v)) {
 			return;
+		}
 
-		r = vn::to_chars(buf, buf + len - 1, X(v), args...);
+		r = vn::to_chars(buf, buf + len - 1, X(v), static_cast<int32_t>(args)...);
 		assert(r.ptr == buf + len - 1);
 
-		r = vn::to_chars(buf, buf + sizeof(buf), X(v), args...);
+		r = vn::to_chars(buf, buf + sizeof(buf), X(v), static_cast<int32_t>(args)...);
 		assert(r.ptr == buf + len);
 		assert(r.ec == std::errc{});
 		assert(std::equal(buf, buf + len, expect));
@@ -88,11 +73,12 @@ template<typename X> struct to_chars_test_base {
 
 	template<typename... Ts> TEST_CONSTEXPR_CXX23 void test_value(X v, Ts... args) {
 		std::to_chars_result r;
-		std::iota(buf, buf + sizeof(buf), static_cast<uint8_t>(1));
-		r = vn::to_chars(buf, buf + sizeof(buf), v, args...);
+		std::iota(buf, buf + sizeof(buf), static_cast<char>(1));
+		r = vn::to_chars(buf, buf + sizeof(buf), static_cast<X>(v), static_cast<int32_t>(args)...);
 		assert(r.ec == std::errc{});
-		for (auto i = r.ptr - buf; i < static_cast<decltype(i)>(sizeof(buf)); ++i)
+		for (auto i = r.ptr - buf; i < static_cast<decltype(i)>(sizeof(buf)); ++i) {
 			assert(static_cast<uint8_t>(buf[static_cast<uint64_t>(i)]) == i + 1);
+		}
 		if (r.ptr >= buf && r.ptr < buf + sizeof(buf)) {
 			*r.ptr = '\0';
 		}
@@ -102,28 +88,29 @@ template<typename X> struct to_chars_test_base {
 		}
 
 		auto ep = r.ptr - 1;
-		r		= vn::to_chars(buf, ep, v, args...);
+		r		= vn::to_chars(buf, ep, v, static_cast<int32_t>(args)...);
 		assert(r.ptr == ep);
 	}
 
   private:
-	static TEST_CONSTEXPR_CXX23 long long fromchars_impl(char const* p, char const* ep, int32_t base, true_type) {
+	template<typename base_type> static TEST_CONSTEXPR_CXX23 long long fromchars_impl(char const* p, char const* ep, base_type base, true_type) {
 		long long r;
-		[[maybe_unused]] char* last = const_cast<char*>(vn::from_chars(p, ep, r, base).ptr);
+		[[maybe_unused]] char* last = const_cast<char*>(vn::from_chars(p, ep, r, static_cast<int32_t>(base)).ptr);
 		assert(last == ep);
 
 		return r;
 	}
 
-	static TEST_CONSTEXPR_CXX23 uint64_t fromchars_impl(char const* p, char const* ep, int32_t base, false_type) {
+	template<typename base_type> static TEST_CONSTEXPR_CXX23 uint64_t fromchars_impl(char const* p, char const* ep, base_type base, false_type) {
 		uint64_t r;
-		[[maybe_unused]] char* last = const_cast<char*>(vn::from_chars(p, ep, r, base).ptr);
+		[[maybe_unused]] char* last = const_cast<char*>(vn::from_chars(p, ep, r, static_cast<int32_t>(base)).ptr);
 		assert(last == ep);
 
 		return r;
 	}
 
-	static TEST_CONSTEXPR_CXX23 auto fromchars_impl(char const* p, char const* ep, int32_t base = 10) -> decltype(fromchars_impl(p, ep, base, std::is_signed<X>())) {
+	template<typename base_type> static TEST_CONSTEXPR_CXX23 auto fromchars_impl(char const* p, char const* ep, base_type base = 10)
+		-> decltype(fromchars_impl(p, ep, base, std::is_signed<X>())) {
 		return fromchars_impl(p, ep, base, std::is_signed<X>());
 	}
 
@@ -147,18 +134,18 @@ template<typename X> struct roundtrip_test_base {
 
 			r2 = vn::from_chars(buf, r.ptr, x, args...);
 
-			TEST_DIAGNOSTIC_PUSH
-			TEST_MSVC_DIAGNOSTIC_IGNORED(4127)
-
-			if (std::is_signed<v_type>::value && v < 0 && std::is_unsigned<X>::value) {
-				assert(x == 0xc);
-				assert(r2.ptr == buf);
+			if constexpr (std::is_signed<v_type>::value && std::is_unsigned<X>::value) {
+				if (v < 0) {
+					assert(x == 0xc);
+					assert(r2.ptr == buf);
+				} else {
+					assert(x == 0xc);
+					assert(r2.ptr == r.ptr);
+				}
 			} else {
 				assert(x == 0xc);
 				assert(r2.ptr == r.ptr);
 			}
-
-			TEST_DIAGNOSTIC_POP
 		}
 	}
 
@@ -180,7 +167,7 @@ template<typename L1, typename L2> constexpr auto concat(L1, L2) -> concat_t<L1,
 	return {};
 }
 
-static constexpr auto all_floats = type_list<float, double>();
+static constexpr auto all_floats   = type_list<float, double>();
 static constexpr auto all_signed   = type_list<char, signed char, short, int32_t, long, long long>();
 static constexpr auto all_unsigned = type_list<uint8_t, unsigned short, uint32_t, uint64_t, uint64_t>();
 static constexpr auto integrals	   = concat(all_unsigned, all_signed);

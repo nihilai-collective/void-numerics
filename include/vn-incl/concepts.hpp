@@ -1,6 +1,9 @@
-// SPDX-License-Identifier: MIT
-// Copyright (c) 2026 Nihilai Collective Corp
-// vn-incl/concepts.hpp
+/*
+ * SPDX-License-Identifier: MIT
+ * Copyright (c) 2026 Nihilai Collective Corp
+ * https://github.com/nihilai-collective/void-numerics
+ * include/vn-incl/concepts.hpp
+ */
 
 #pragma once
 
@@ -13,22 +16,22 @@ namespace vn {
 		template<typename v_type> using base_t = std::remove_cvref_t<v_type>;
 
 		template<typename v_type>
-		concept integer_types = std::integral<base_t<v_type>>;
+		concept integer_types = std::integral<base_t<v_type>> && !std::same_as<base_t<v_type>, bool>;
 
 		template<typename v_type>
-		concept integer8_types = integer_types<v_type> && sizeof(base_t<v_type>) == 1;
+		concept integral8_types = integer_types<v_type> && sizeof(base_t<v_type>) == 1;
 
 		template<typename v_type>
-		concept integer16_types = integer_types<v_type> && sizeof(base_t<v_type>) == 2;
+		concept integral16_types = integer_types<v_type> && sizeof(base_t<v_type>) == 2;
 
 		template<typename v_type>
-		concept integer32_types = integer_types<v_type> && sizeof(base_t<v_type>) == 4;
+		concept integral32_types = integer_types<v_type> && sizeof(base_t<v_type>) == 4;
 
 		template<typename v_type>
-		concept integer64_types = integer_types<v_type> && sizeof(base_t<v_type>) == 8;
+		concept integral64_types = integer_types<v_type> && sizeof(base_t<v_type>) == 8;
 
 		template<typename v_type>
-		concept uint_types = std::unsigned_integral<base_t<v_type>>;
+		concept uint_types = std::unsigned_integral<base_t<v_type>> && !std::same_as<base_t<v_type>, bool>;
 
 		template<typename v_type>
 		concept uint8_types = uint_types<v_type> && sizeof(base_t<v_type>) == 1;
@@ -43,7 +46,7 @@ namespace vn {
 		concept uint64_types = uint_types<v_type> && sizeof(base_t<v_type>) == 8;
 
 		template<typename v_type>
-		concept int_types = std::signed_integral<base_t<v_type>>;
+		concept int_types = std::signed_integral<base_t<v_type>> && !std::same_as<base_t<v_type>, bool>;
 
 		template<typename v_type>
 		concept int8_types = int_types<v_type> && sizeof(base_t<v_type>) == 1;

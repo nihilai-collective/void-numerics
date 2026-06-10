@@ -1,6 +1,9 @@
-// SPDX-License-Identifier: MIT
-// Copyright (c) 2026 Nihilai Collective Corp
-// vn-incl/d_to_str.hpp
+/*
+ * SPDX-License-Identifier: MIT
+ * Copyright (c) 2026 Nihilai Collective Corp
+ * https://github.com/nihilai-collective/void-numerics
+ * include/vn-incl/d_to_str.hpp
+ */
 
 #pragma once
 
@@ -10,7 +13,7 @@
 namespace vn {
 
 	template<detail::float_types v_type>
-	VN_FORCE_INLINE std::to_chars_result to_chars(char* first, char* last, v_type value, std::chars_format format = std::chars_format::fixed) noexcept {
+	VN_INLINE std::to_chars_result to_chars(char* first, char* last, v_type value, std::chars_format format = std::chars_format::fixed) noexcept {
 		auto r = std::to_chars(first, last, value, format);
 		return { r.ptr, r.ec };
 	}

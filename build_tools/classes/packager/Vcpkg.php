@@ -37,8 +37,7 @@ class Vcpkg
 
     /**
      * Constructor
-     * 
-     * Examines current diretory's git repository to get latest tag and version.
+     * * Examines current diretory's git repository to get latest tag and version.
      */
     public function __construct()
     {
@@ -53,8 +52,8 @@ class Vcpkg
         $this->version = preg_replace('/^v/', '', $this->getTag());
         echo GREEN . "Latest tag: " . $this->getTag() . " version: " . $this->getVersion() . "\n" . WHITE;
 
-	$this->git = trim(`which git`);
-	$this->sudo = trim(`which sudo`);
+        $this->git = trim(`which git`);
+        $this->sudo = trim(`which sudo`);
     }
 
     /**
@@ -69,8 +68,7 @@ class Vcpkg
 
     /**
      * Get the git tag we are building
-     * 
-     * @return string
+     * * @return string
      */
     public function getTag(): string
     {
@@ -90,8 +88,7 @@ class Vcpkg
     /**
      * Check out a repository by tag or branch name to ~/void-numerics,
      * using the personal access token and username passed in as command line parameters.
-     * 
-     * @param string $tag Tag to clone
+     * * @param string $tag Tag to clone
      * @return bool false if the repository could not be cloned
      */
     function checkoutRepository(string $tag = ""): bool
@@ -102,7 +99,7 @@ class Vcpkg
             /* Empty tag means use the main branch */
             $tag = `{$this->git} config --get init.defaultBranch || echo main`;
         }
-	$repositoryUrl = 'https://' . urlencode($argv[1]) . ':' . urlencode($argv[2]) . '@github.com/nihilai-collective/void-numerics';
+        $repositoryUrl = 'https://' . urlencode($argv[1]) . ':' . urlencode($argv[2]) . '@github.com/nihilai-collective/void-numerics';
 
         echo GREEN . "Check out repository: $tag (user: ". $argv[1] . " branch: " . $tag . ")\n" . WHITE;
 
@@ -113,18 +110,17 @@ class Vcpkg
         $this->git('clone ' . escapeshellarg($repositoryUrl) . ' ./void-numerics --depth=1');
         
         /* This is noisy, silence it */
-	$status = chdir(getenv("HOME") . '/void-numerics');
+        $status = chdir(getenv("HOME") . '/void-numerics');
         $this->git('fetch -at 2>/dev/null');
         $this->git('checkout ' . escapeshellarg($tag) . ' 2>/dev/null');
-	
-	return $status;
+    
+        return $status;
     }
 
     /**
      * Create ./vcpkg/ports/void-numerics/vcpkg.json and return the portfile contents to
      * build the branch that is cloned at ~/void-numerics
-     * 
-     * @param string $sha512 The SHA512 sum of the tagged download, or initially
+     * * @param string $sha512 The SHA512 sum of the tagged download, or initially
      * zero, which means that the vcpkg install command should obtain it the
      * second time around.
      * @return string The portfile content
@@ -134,15 +130,15 @@ class Vcpkg
         echo GREEN . "Construct portfile for " . $this->getVersion() . ", sha512: $sha512\n" . WHITE;
         chdir(getenv("HOME") . '/void-numerics');
 
-        $portFileContent = 'vcpkg_from_github(
+        $portFileContent = 'set(VCPKG_BUILD_TYPE release) # header-only
+
+vcpkg_from_github(
     OUT_SOURCE_PATH SOURCE_PATH
     REPO nihilai-collective/void-numerics
-    REF "v${VERSION}"    
+    REF "v${VERSION}"
     SHA512 ' . $sha512 . '
     HEAD_REF main
 )
-
-set(VCPKG_BUILD_TYPE release) # header-only
 
 vcpkg_cmake_configure(
     SOURCE_PATH "${SOURCE_PATH}"
@@ -150,11 +146,14 @@ vcpkg_cmake_configure(
 
 vcpkg_cmake_install()
 
+vcpkg_cmake_config_fixup(CONFIG_PATH share/void-numerics)
+
 vcpkg_install_copyright(FILE_LIST "${SOURCE_PATH}/License.md")
 ';
 
-     
-// ./vcpkg/ports/void-numerics/vcpkg.json
+        $portFileContent = str_replace("\r\n", "\n", $portFileContent);
+
+        // ./vcpkg/ports/void-numerics/vcpkg.json
         $versionFileContent = '{
   "name": "void-numerics",
   "version": ' . json_encode($this->getVersion()) . ',
@@ -164,6 +163,10 @@ vcpkg_install_copyright(FILE_LIST "${SOURCE_PATH}/License.md")
   "dependencies": [
     {
       "name": "vcpkg-cmake",
+      "host": true
+    },
+    {
+      "name": "vcpkg-cmake-config",
       "host": true
     }
   ]
@@ -175,6 +178,7 @@ vcpkg_install_copyright(FILE_LIST "${SOURCE_PATH}/License.md")
             mkdir($vcpkgDir, 0755, true);
         }
         file_put_contents('./vcpkg/ports/void-numerics/vcpkg.json', $versionFileContent);
+        
         return $portFileContent;
     }
 
@@ -188,54 +192,52 @@ vcpkg_install_copyright(FILE_LIST "${SOURCE_PATH}/License.md")
      * @return string SHA512 sum of build output
      */
     function firstBuild(string $portFileContent): string
-{
-    echo GREEN . "Starting first build\n" . WHITE;
+    {
+        echo GREEN . "Starting first build\n" . WHITE;
 
-    chdir(getenv("HOME") . '/void-numerics');
-    echo GREEN . "Create /usr/local/share/vcpkg/ports/void-numerics/\n" . WHITE;
-    $this->sudo('mkdir -p /usr/local/share/vcpkg/ports/void-numerics/');
-    echo GREEN . "Copy vcpkg.json to /usr/local/share/vcpkg/ports/void-numerics/vcpkg.json\n" . WHITE;
-    $this->sudo('cp -v -R ./vcpkg/ports/void-numerics/vcpkg.json /usr/local/share/vcpkg/ports/void-numerics/vcpkg.json');
-    file_put_contents('/tmp/portfile', $portFileContent);
-    $this->sudo('cp -v -R /tmp/portfile /usr/local/share/vcpkg/ports/void-numerics/portfile.cmake');
-    unlink('/tmp/portfile');
-    
-    // Capture BOTH stdout and stderr
-    $buildResults = shell_exec($this->sudo . ' /usr/local/share/vcpkg/vcpkg install void-numerics:x64-linux 2>&1');
-    
-    // DEBUG: Print the full output
-    echo RED . "=== FULL BUILD OUTPUT ===\n" . WHITE;
-    echo $buildResults . "\n";
-    echo RED . "=== END BUILD OUTPUT ===\n" . WHITE;
-    
-    $matches = [];
-    if (preg_match('/please change the expected SHA512 to:\s+([0-9a-fA-F]+)/', $buildResults, $matches)) {
-        echo GREEN . "Obtained SHA512 for first build: " . $matches[1] . "\n" . WHITE;
-        $this->firstBuildComplete = true;
-        return $matches[1];
+        chdir(getenv("HOME") . '/void-numerics');
+        echo GREEN . "Create /usr/local/share/vcpkg/ports/void-numerics/\n" . WHITE;
+        $this->sudo('mkdir -p /usr/local/share/vcpkg/ports/void-numerics/');
+        echo GREEN . "Copy vcpkg.json to /usr/local/share/vcpkg/ports/void-numerics/vcpkg.json\n" . WHITE;
+        $this->sudo('cp -v -R ./vcpkg/ports/void-numerics/vcpkg.json /usr/local/share/vcpkg/ports/void-numerics/vcpkg.json');
+        file_put_contents('/tmp/portfile', $portFileContent);
+        $this->sudo('cp -v -R /tmp/portfile /usr/local/share/vcpkg/ports/void-numerics/portfile.cmake');
+        unlink('/tmp/portfile');
+        
+        // Capture BOTH stdout and stderr
+        $buildResults = shell_exec($this->sudo . ' /usr/local/share/vcpkg/vcpkg install void-numerics:x64-linux 2>&1');
+        
+        // DEBUG: Print the full output
+        echo RED . "=== FULL BUILD OUTPUT ===\n" . WHITE;
+        echo $buildResults . "\n";
+        echo RED . "=== END BUILD OUTPUT ===\n" . WHITE;
+        
+        $matches = [];
+        if (preg_match('/please change the expected SHA512 to:\s+([0-9a-fA-F]+)/', $buildResults, $matches)) {
+            echo GREEN . "Obtained SHA512 for first build: " . $matches[1] . "\n" . WHITE;
+            $this->firstBuildComplete = true;
+            return $matches[1];
+        }
+        if (preg_match('/Actual hash:\s+([0-9a-fA-F]+)/', $buildResults, $matches)) {
+            echo GREEN . "Obtained SHA512 for first build (old format): " . $matches[1] . "\n" . WHITE;
+            $this->firstBuildComplete = true;
+            return $matches[1];
+        }
+        
+        echo RED . "No SHA512 found during first build :(\n" . WHITE;
+        return '';
     }
-    if (preg_match('/Actual hash:\s+([0-9a-fA-F]+)/', $buildResults, $matches)) {
-        echo GREEN . "Obtained SHA512 for first build (old format): " . $matches[1] . "\n" . WHITE;
-        $this->firstBuildComplete = true;
-        return $matches[1];
-    }
-    
-    echo RED . "No SHA512 found during first build :(\n" . WHITE;
-    return '';
-}
 
     /**
      * Second build using a valid SHA512 sum. This attempt should succeed, allowing us to push
      * the changed vcpkg portfiles into the main branch, where they can be used in a PR to
      * microsoft/vcpkg repository later.
-     * 
-     * @param string $portFileContent the contents of the portfile, containing a valid SHA512
+     * * @param string $portFileContent the contents of the portfile, containing a valid SHA512
      * sum from the first build attempt.
      * @return bool False if the build failed
      */
     function secondBuild(string $portFileContent): bool
     {
-
         if (!$this->firstBuildComplete) {
             throw new RuntimeException("No SHA512 sum is available, first build has not been run!");
         }
@@ -244,6 +246,7 @@ vcpkg_install_copyright(FILE_LIST "${SOURCE_PATH}/License.md")
         echo GREEN . "Copy local port files to /usr/local/share...\n" . WHITE;
         chdir(getenv("HOME") . '/void-numerics');
         file_put_contents('./vcpkg/ports/void-numerics/portfile.cmake', $portFileContent);
+        $this->sudo('vcpkg format-manifest ./vcpkg/ports/void-numerics/vcpkg.json /usr/local/share/vcpkg/ports/void-numerics/vcpkg.json');
         $this->sudo('cp -v -R ./vcpkg/ports/void-numerics/vcpkg.json /usr/local/share/vcpkg/ports/void-numerics/vcpkg.json');
         $this->sudo('cp -v -R ./vcpkg/ports/void-numerics/portfile.cmake /usr/local/share/vcpkg/ports/void-numerics/portfile.cmake');
         $this->sudo('cp -v -R ./vcpkg/ports/* /usr/local/share/vcpkg/ports/');
@@ -283,6 +286,6 @@ vcpkg_install_copyright(FILE_LIST "${SOURCE_PATH}/License.md")
             readfile("/usr/local/share/vcpkg/buildtrees/void-numerics/install-x64-linux-dbg-out.log");
         }
 
-	return $resultCode == 0;
+        return $resultCode == 0;
     }
-};
+}
