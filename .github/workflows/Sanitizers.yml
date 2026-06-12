@@ -14,10 +14,10 @@ jobs:
         include:
           - os: ubuntu-latest
             compiler: clang
-            name: "Ubuntu Clang"
+            name: "Linux Clang"
           - os: ubuntu-latest
             compiler: gcc
-            name: "Ubuntu GCC"
+            name: "Linux GCC"
           - os: macos-latest
             compiler: clang
             name: "macOS Clang"
@@ -34,7 +34,7 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      - name: Setup Clang (Ubuntu)
+      - name: Setup Clang (Linux)
         if: matrix.os == 'ubuntu-latest' && matrix.compiler == 'clang'
         run: |
           wget https://apt.llvm.org/llvm.sh
@@ -43,7 +43,7 @@ jobs:
           sudo ./llvm.sh $DEV_VERSION
           echo "CXX_BIN=/usr/bin/clang++-$DEV_VERSION" >> $GITHUB_ENV
 
-      - name: Setup GCC (Ubuntu)
+      - name: Setup GCC (Linux)
         if: matrix.os == 'ubuntu-latest' && matrix.compiler == 'gcc'
         run: |
           sudo add-apt-repository ppa:ubuntu-toolchain-r/test -y

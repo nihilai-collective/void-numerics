@@ -53,7 +53,7 @@ set(VN_CLANG_COMPILE_OPTIONS
     >
 )
 
-set(VN_GNU_COMPILE_OPTIONS
+set(VN_GCC_COMPILE_OPTIONS
     $<$<BOOL:${VN_ASAN_EFFECTIVE}>:
         -fsanitize=address
         -fsanitize-address-use-after-scope
@@ -87,7 +87,7 @@ set(VN_COMPILE_OPTIONS
     $<$<CXX_COMPILER_ID:AppleClang>:${VN_CLANG_COMPILE_OPTIONS}>
     $<$<CXX_COMPILER_ID:Clang>:${VN_CLANG_COMPILE_OPTIONS}>
     $<$<CXX_COMPILER_ID:MSVC>:${VN_MSVC_COMPILE_OPTIONS}>
-    $<$<CXX_COMPILER_ID:GNU>:${VN_GNU_COMPILE_OPTIONS}>
+    $<$<CXX_COMPILER_ID:GCC>:${VN_GCC_COMPILE_OPTIONS}>
 )
 
 set(VN_CLANG_LINK_OPTIONS
@@ -97,7 +97,7 @@ set(VN_CLANG_LINK_OPTIONS
     $<$<PLATFORM_ID:Darwin>:-Wl,-x>
 )
 
-set(VN_GNU_LINK_OPTIONS
+set(VN_GCC_LINK_OPTIONS
     $<$<BOOL:${VN_UBSAN_EFFECTIVE}>:-fsanitize=undefined>
     $<$<BOOL:${VN_ASAN_EFFECTIVE}>:-fsanitize=address>
     $<$<PLATFORM_ID:Linux>:-static-libasan>
@@ -115,7 +115,7 @@ set(VN_LINK_OPTIONS
     $<$<CXX_COMPILER_ID:AppleClang>:${VN_CLANG_LINK_OPTIONS}>
     $<$<CXX_COMPILER_ID:Clang>:${VN_CLANG_LINK_OPTIONS}>
     $<$<CXX_COMPILER_ID:MSVC>:${VN_MSVC_LINK_OPTIONS}>
-    $<$<CXX_COMPILER_ID:GNU>:${VN_GNU_LINK_OPTIONS}>
+    $<$<CXX_COMPILER_ID:GCC>:${VN_GCC_LINK_OPTIONS}>
 )
 
 FetchContent_Declare(
@@ -146,7 +146,7 @@ target_compile_definitions(vn_unit_tests
         $<IF:$<CONFIG:Debug>,VN_DEBUG=1,VN_DEBUG=0>
         VN_ARCH_ARM64=$<IF:$<OR:$<STREQUAL:${CMAKE_SYSTEM_PROCESSOR},aarch64>,$<STREQUAL:${CMAKE_SYSTEM_PROCESSOR},ARM64>,$<STREQUAL:${CMAKE_SYSTEM_PROCESSOR},arm64>>,1,0>
         VN_ARCH_X64=$<IF:$<OR:$<STREQUAL:${CMAKE_SYSTEM_PROCESSOR},x86_64>,$<STREQUAL:${CMAKE_SYSTEM_PROCESSOR},AMD64>>,1,0>
-        VN_EXTENSION=$<IF:$<OR:$<CXX_COMPILER_ID:Clang>,$<CXX_COMPILER_ID:GNU>,$<CXX_COMPILER_ID:AppleClang>>,__extension__,>
+        VN_EXTENSION=$<IF:$<OR:$<CXX_COMPILER_ID:Clang>,$<CXX_COMPILER_ID:GCC>,$<CXX_COMPILER_ID:AppleClang>>,__extension__,>
 )
 
 install(

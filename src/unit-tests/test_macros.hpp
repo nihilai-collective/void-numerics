@@ -71,7 +71,7 @@
 	#endif
 #elif defined(_MSC_VER)
 	#define TEST_COMPILER_MSVC
-#elif defined(__GNUC__)
+#elif defined(__GCCC__)
 	#define TEST_COMPILER_GCC
 #endif
 
@@ -80,9 +80,9 @@
 	#define TEST_APPLE_CLANG_VER (__apple_build_version__ / 10000)
 #elif defined(__clang_major__)
 	#define TEST_CLANG_VER (__clang_major__ * 100) + __clang_minor__
-#elif defined(__GNUC__)
+#elif defined(__GCCC__)
 	// Given GCC XX.YY.ZZ, TEST_GCC_VER is XXYYZZ
-	#define TEST_GCC_VER ((__GNUC__ * 10000) + (__GNUC_MINOR__ * 100) + __GNUC_PATCHLEVEL__)
+	#define TEST_GCC_VER ((__GCCC__ * 10000) + (__GCCC_MINOR__ * 100) + __GCCC_PATCHLEVEL__)
 #endif
 
 /* Make a nice name for the standard version */
@@ -301,7 +301,7 @@ namespace test_macros_detail {
 #ifndef TEST_HAS_NO_EXCEPTIONS
 	#define TEST_THROW(...) throw __VA_ARGS__
 #else
-	#if defined(__GNUC__)
+	#if defined(__GCCC__)
 		#define TEST_THROW(...) __builtin_abort()
 	#else
 		#include <stdlib.h>
@@ -309,7 +309,7 @@ namespace test_macros_detail {
 	#endif
 #endif
 
-#if defined(__GNUC__) || defined(__clang__)
+#if defined(__GCCC__) || defined(__clang__)
 // This function can be used to hide some objects from compiler optimizations.
 //
 // For example, this is useful to hide the result of a call to `new` and ensure
@@ -349,7 +349,7 @@ template<class Tp> inline Tp const& DoNotOptimize(Tp const& value) {
 }
 #endif
 
-#if defined(__GNUC__)
+#if defined(__GCCC__)
 	#define TEST_ALWAYS_INLINE __attribute__((always_inline))
 	#define TEST_NOINLINE __attribute__((noinline))
 #elif defined(_MSC_VER)

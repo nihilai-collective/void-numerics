@@ -6,22 +6,22 @@
 
 #if defined(__clang__)
 	#define VN_COMPILER_CLANG 1
-	#define VN_COMPILER_GNU 0
+	#define VN_COMPILER_GCC 0
 	#define VN_COMPILER_MSVC 0
 	#define VN_LIFETIME_BOUND [[clang::lifetimebound]]
 #elif defined(__GNUC__) || defined(__GNUG__)
 	#define VN_COMPILER_CLANG 0
-	#define VN_COMPILER_GNU 1
+	#define VN_COMPILER_GCC 1
 	#define VN_COMPILER_MSVC 0
 	#define VN_LIFETIME_BOUND
 #elif defined(_MSC_VER)
 	#define VN_COMPILER_CLANG 0
-	#define VN_COMPILER_GNU 0
+	#define VN_COMPILER_GCC 0
 	#define VN_COMPILER_MSVC 1
 	#define VN_LIFETIME_BOUND [[msvc::lifetimebound]]
 #else
 	#define VN_COMPILER_CLANG 0
-	#define VN_COMPILER_GNU 0
+	#define VN_COMPILER_GCC 0
 	#define VN_COMPILER_MSVC 0
 	#define VN_LIFETIME_BOUND
 #endif
@@ -56,7 +56,7 @@
 #if !defined(NDEBUG)
 	#if VN_COMPILER_MSVC
 		#define VN_FORCE_INLINE inline [[msvc::noinline]]
-	#elif VN_COMPILER_GNU || VN_COMPILER_CLANG
+	#elif VN_COMPILER_GCC || VN_COMPILER_CLANG
 		#define VN_FORCE_INLINE inline __attribute__((noinline))
 	#else
 		#define VN_FORCE_INLINE inline
@@ -64,7 +64,7 @@
 #else
 	#if VN_COMPILER_MSVC
 		#define VN_FORCE_INLINE [[msvc::forceinline]]
-	#elif VN_COMPILER_GNU || VN_COMPILER_CLANG
+	#elif VN_COMPILER_GCC || VN_COMPILER_CLANG
 		#define VN_FORCE_INLINE inline __attribute__((always_inline))
 	#else
 		#define VN_FORCE_INLINE inline

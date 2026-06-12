@@ -9,7 +9,7 @@ option(VN_UBSAN "Enable UndefinedBehaviorSanitizer"  OFF)
 set(VN_ASAN_EFFECTIVE  ${VN_ASAN})
 set(VN_UBSAN_EFFECTIVE ${VN_UBSAN})
 
-if(APPLE AND CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+if(APPLE AND CMAKE_CXX_COMPILER_ID STREQUAL "GCC")
     if(VN_ASAN)
         message(WARNING
             "VN_ASAN is not supported with GCC on macOS -- ignoring for this "

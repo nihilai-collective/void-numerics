@@ -42,7 +42,7 @@ Every conversion is exhaustively unit-tested against `std::to_chars` / `std::fro
 - **Compile-time tables** for digit conversion and overflow bounds
 - **Multiply-and-shift division replacement** for hot paths
 - **Force-inlined helpers** with manual ladder dispatch sized to digit count
-- **Cross-platform CI**: Ubuntu Clang-20, Ubuntu GCC-14, macOS Clang, macOS GCC-15, Windows MSVC
+- **Cross-platform CI**: Linux Clang-20, Linux GCC-14, macOS Clang, macOS GCC-15, Windows MSVC
 - **AddressSanitizer / UndefinedBehaviorSanitizer** support out of the box
 
 ---

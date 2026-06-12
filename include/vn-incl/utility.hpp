@@ -164,10 +164,10 @@ namespace vn {
 
 		template<uint64_t size> using int_tables = int_tables_impl<std::endian::native, size>;
 
-#if !VN_COMPILER_CLANG && !VN_COMPILER_GNU && !VN_COMPILER_MSVC
+#if !VN_COMPILER_CLANG && !VN_COMPILER_GCC && !VN_COMPILER_MSVC
 
 		template<uint_types v_type_new> VN_FORCE_INLINE static v_type_new mulhi_portable(v_type_new a, v_type_new b) noexcept {
-			using v_type						 = get_next_higher_int_t<v_type_new>;
+			using v_type						 = next_higher_int_t<v_type_new>;
 			static constexpr uint64_t total_bits = sizeof(v_type_new) * 8;
 			static constexpr uint64_t half_bits	 = total_bits / 2;
 			static constexpr v_type mask		 = (static_cast<v_type>(1) << half_bits) - 1;
@@ -187,7 +187,7 @@ namespace vn {
 
 		struct multiply_and_shift {
 			VN_FORCE_INLINE static uint64_t impl(uint64_t  value) noexcept {
-#if VN_COMPILER_CLANG || VN_COMPILER_GNU
+#if VN_COMPILER_CLANG || VN_COMPILER_GCC
 				return static_cast<uint64_t>(static_cast<__uint128_t>(value) * 12379400392853802749ULL >> 90);
 #elif VN_COMPILER_MSVC
 				uint64_t high_part;
