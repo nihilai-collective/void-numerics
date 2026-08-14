@@ -10,23 +10,7 @@
 #ifndef SUPPORT_CHARCONV_TEST_HELPERS_H
 #define SUPPORT_CHARCONV_TEST_HELPERS_H
 
-#include <assert.h>
-#include <cerrno>
-#include <charconv>
-#include <cstddef>
-#include <ostream>
-#include <string>
-#include <limits>
-#include <numeric>
-#include <string.h>
-#include <stdlib.h>
-#include <type_traits>
-
-#include <void-numerics>
-
-#include <rt-ut-incl/index.hpp>
-
-#include "test_macros.hpp"
+#include "common.hpp"
 
 #if TEST_STD_VER < 11
 	#error This file requires C++11
@@ -48,19 +32,19 @@ template<typename X, typename v_type, typename A, typename B> constexpr bool fit
 }
 
 template<typename X, typename v_type, typename xl = std::numeric_limits<X>> constexpr bool fits_in(v_type v, false_type, true_type /* v_type signed*/, true_type /* X signed */) {
-	return xl::lowest() <= v && v <= ( xl::max )();
+	return xl::lowest() <= v && v <= (xl::max)();
 }
 
 template<typename X, typename v_type, typename xl = std::numeric_limits<X>>
 constexpr bool fits_in(v_type v, false_type, true_type /* v_type signed */, false_type /* X unsigned*/) {
-	return 0 <= v && typename std::make_unsigned<v_type>::type(v) <= ( xl::max )();
+	return 0 <= v && typename std::make_unsigned<v_type>::type(v) <= (xl::max)();
 }
 
 template<typename X, typename v_type, typename xl = std::numeric_limits<X>> constexpr bool fits_in(v_type v, false_type, false_type, false_type) {
-	return v <= typename std::make_unsigned<X>::type(( xl::max )());
+	return v <= typename std::make_unsigned<X>::type((xl::max)());
 }
 template<typename X, typename v_type, typename xl = std::numeric_limits<X>> constexpr bool fits_in(v_type v, false_type, false_type, true_type) {
-	return v <= typename std::make_unsigned<X>::type(( xl::max )());
+	return v <= typename std::make_unsigned<X>::type((xl::max)());
 }
 
 template<typename X, typename v_type> constexpr bool fits_in(v_type v) {
@@ -181,7 +165,7 @@ template<typename L1, typename L2> constexpr auto concat(L1, L2) -> concat_t<L1,
 	return {};
 }
 
-static constexpr auto all_floats = type_list<float, double>();
+static constexpr auto all_floats   = type_list<float, double>();
 static constexpr auto all_signed   = type_list<char, signed char, short, int32_t, long, long long>();
 static constexpr auto all_unsigned = type_list<uint8_t, unsigned short, uint32_t, uint64_t, uint64_t>();
 static constexpr auto integrals	   = concat(all_unsigned, all_signed);

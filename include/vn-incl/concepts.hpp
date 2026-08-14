@@ -13,10 +13,22 @@ namespace vn {
 		template<typename v_type> using base_t = std::remove_cvref_t<v_type>;
 
 		template<typename v_type>
-		concept integer_types = std::integral<base_t<v_type>>;
+		concept integer_types = std::integral<base_t<v_type>> && !std::same_as<base_t<v_type>, bool>;
 
 		template<typename v_type>
-		concept uint_types = std::unsigned_integral<base_t<v_type>>;
+		concept integral8_types = integer_types<v_type> && sizeof(base_t<v_type>) == 1;
+
+		template<typename v_type>
+		concept integral16_types = integer_types<v_type> && sizeof(base_t<v_type>) == 2;
+
+		template<typename v_type>
+		concept integral32_types = integer_types<v_type> && sizeof(base_t<v_type>) == 4;
+
+		template<typename v_type>
+		concept integral64_types = integer_types<v_type> && sizeof(base_t<v_type>) == 8;
+
+		template<typename v_type>
+		concept uint_types = std::unsigned_integral<base_t<v_type>> && !std::same_as<base_t<v_type>, bool>;
 
 		template<typename v_type>
 		concept uint8_types = uint_types<v_type> && sizeof(base_t<v_type>) == 1;
@@ -31,7 +43,7 @@ namespace vn {
 		concept uint64_types = uint_types<v_type> && sizeof(base_t<v_type>) == 8;
 
 		template<typename v_type>
-		concept int_types = std::signed_integral<base_t<v_type>>;
+		concept int_types = std::signed_integral<base_t<v_type>> && !std::same_as<base_t<v_type>, bool>;
 
 		template<typename v_type>
 		concept int8_types = int_types<v_type> && sizeof(base_t<v_type>) == 1;
@@ -57,4 +69,3 @@ namespace vn {
 	}
 
 }
-	

@@ -1,11 +1,11 @@
 name: Unit Tests
+
 on:
   push:
     branches: [ "**" ]
   pull_request:
     branches: [ "**" ]
   workflow_dispatch:
-
 jobs:
   build:
     strategy:
@@ -27,8 +27,8 @@ jobs:
           - os: windows-latest
             compiler: msvc
             name: "Windows MSVC"
-
     runs-on: ${{ matrix.os }}
+
     name: Build on ${{ matrix.name }}
     steps:
       - name: Checkout Repository
@@ -75,14 +75,14 @@ jobs:
 
       - name: Configure CMake (Windows)
         if: runner.os == 'Windows'
-        run: cmake -S . -B ./Build -DCMAKE_BUILD_TYPE=Debug  -DCMAKE_CXX_COMPILER=${{ matrix.cmake_cxx }} -DVN_UNIT_TESTS=TRUE -DVN_ASAN=TRUE -DVN_UBSAN=TRUE
+        run: cmake -S . -B ./Build -DCMAKE_BUILD_TYPE=Debug -DVN_UNIT_TESTS=TRUE -DVN_ASAN=TRUE -DVN_UBSAN=TRUE
 
       - name: Build
-        run: cmake --build ./Build --config=Debug  -v
+        run: cmake --build ./Build --config=Debug -v
 
       - name: Install
         run: |
-          ${{ runner.os != 'Windows' && 'sudo' || '' }} cmake --install ./Build --config=Debug 
+          ${{ runner.os != 'Windows' && 'sudo' || '' }} cmake --install ./Build --config=Debug
 
       - name: Run (Unix)
         if: runner.os != 'Windows'
@@ -94,4 +94,4 @@ jobs:
         if: runner.os == 'Windows'
         shell: pwsh
         run: |
-          & "C:/Program Files (x86)/vn/bin/vn-unit-tests.exe"
+          & "C:/Program Files (x86)/void-numerics/bin/vn-unit-tests.exe"

@@ -4,11 +4,7 @@
 
 #pragma once
 
-#include <void-numerics>
-#include <iostream>
-#include <charconv>
-#include <random>
-#include <string>
+#include "common.hpp"
 
 namespace vn_to_chars_tests {
 
@@ -185,6 +181,27 @@ namespace vn_to_chars_tests {
 				return true;
 			});
 		}
+
+		rt_ut::unit_test<"uint8_t exact buffer size 1-digit", true>::assert_eq(true, [] {
+			char buf[1]{ '\0' };
+			uint8_t val = 5;
+			auto r		= vn::to_chars(buf, buf + 1, val);
+			return r.ec == std::errc{} && r.ptr == buf + 1 && buf[0] == '5';
+		});
+
+		rt_ut::unit_test<"uint8_t exact buffer size 2-digit", true>::assert_eq(true, [] {
+			char buf[2]{ '\0', '\0' };
+			uint8_t val = 42;
+			auto r		= vn::to_chars(buf, buf + 2, val);
+			return r.ec == std::errc{} && r.ptr == buf + 2 && buf[0] == '4' && buf[1] == '2';
+		});
+
+		rt_ut::unit_test<"uint8_t overflow detection", true>::assert_eq(true, [] {
+			char buf[1]{ '\0' };
+			uint8_t val = 42;
+			auto r		= vn::to_chars(buf, buf + 1, val);
+			return r.ec == std::errc::value_too_large;
+		});
 	}
 
 }

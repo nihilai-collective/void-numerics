@@ -150,5 +150,4 @@ install(
     FILES
         $<TARGET_FILE:vn-unit-tests>
     DESTINATION bin
-    OPTIONAL
 )

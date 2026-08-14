@@ -4,13 +4,7 @@
 
 #pragma once
 
-#include <void-numerics>
-#include <iostream>
-#include <charconv>
-#include <random>
-#include <string>
-#include <cstring>
-#include <system_error>
+#include "common.hpp"
 
 namespace vn_from_chars_tests {
 
@@ -609,6 +603,165 @@ namespace vn_from_chars_tests {
 				return true;
 			});
 		}
+		
+		rt_ut::unit_test<name + "-overflow errc verification", true>::assert_eq(true, [] {
+			std::string s = digits_of(std::numeric_limits<v_type>::max()) + "999";
+			v_type v{};
+			auto res = vn::from_chars(s.data(), s.data() + s.size(), v);
+			if (res.ec != std::errc::result_out_of_range) {
+				return false;
+			}
+			if constexpr (vn::detail::int_types<v_type>) {
+				std::string neg = "-" + digits_of(std::numeric_limits<v_type>::max()) + "999";
+				auto neg_res	= vn::from_chars(neg.data(), neg.data() + neg.size(), v);
+				if (neg_res.ec != std::errc::result_out_of_range) {
+					return false;
+				}
+			}
+			return true;
+		});
+		
+		rt_ut::unit_test<name + "-trim leading zeros uninitialized chunk exposure", true>::assert_eq(true, [] {
+			for (std::size_t z: { std::size_t{ 3 }, std::size_t{ 5 }, std::size_t{ 6 }, std::size_t{ 7 } }) {
+				std::string s(z, '0');
+				s += "1";
+				v_type v{};
+				auto res = vn::from_chars(s.data(), s.data() + s.size(), v);
+				if (res.ec != std::errc{} || v != 1 || res.ptr != s.data() + s.size()) {
+					return false;
+				}
+			}
+			return true;
+		});
+
+		rt_ut::unit_test<name + "-trim leading zeros followed by non-digits", true>::assert_eq(true, [] {
+			for (std::size_t z = 1; z <= 8; ++z) {
+				std::string s(z, '0');
+				s += "abc";
+				v_type v{ 42 };
+				auto res = vn::from_chars(s.data(), s.data() + s.size(), v);
+				if (res.ec != std::errc{} || v != 0 || res.ptr != s.data() + z) {
+					return false;
+				}
+			}
+			return true;
+		});
+
+		rt_ut::unit_test<name + "-dirty stack zero trim 3 5 6 7", true>::assert_eq(true, [] {
+			auto poison_stack = [](uint8_t pattern) {
+				volatile uint8_t dummy[512];
+				for (std::size_t i = 0; i < sizeof(dummy); ++i) {
+					dummy[i] = pattern;
+				}
+			};
+
+			for (uint8_t pattern: { uint8_t{ 0x00 }, uint8_t{ 0x30 }, uint8_t{ 0x55 }, uint8_t{ 0xAA }, uint8_t{ 0xFF } }) {
+				for (std::size_t z: { std::size_t{ 3 }, std::size_t{ 5 }, std::size_t{ 6 }, std::size_t{ 7 } }) {
+					poison_stack(pattern);
+					std::string s(z, '0');
+					s += "7";
+					v_type v{ 99 };
+					auto res = vn::from_chars(s.data(), s.data() + s.size(), v);
+					if (res.ec != std::errc{} || v != 7 || res.ptr != s.data() + s.size()) {
+						return false;
+					}
+				}
+			}
+			return true;
+		});
+
+		rt_ut::unit_test<name + "-partial parse non-digit termination", true>::assert_eq(true, [] {
+			std::string s = "12x99";
+			v_type v{};
+			auto res = vn::from_chars(s.data(), s.data() + s.size(), v);
+			if (res.ec != std::errc{}) {
+				return false;
+			}
+			if (res.ptr != s.data() + 2) {
+				return false;
+			}
+			if (v != static_cast<v_type>(12)) {
+				return false;
+			}
+			return true;
+		});
+
+		rt_ut::unit_test<name + "-dirty stack zero trim 8 16 loop path", true>::assert_eq(true, [] {
+			auto poison_stack = [](uint8_t pattern) {
+				volatile uint8_t dummy[512];
+				for (std::size_t i = 0; i < sizeof(dummy); ++i) {
+					dummy[i] = pattern;
+				}
+			};
+			for (uint8_t pattern: { uint8_t{ 0x00 }, uint8_t{ 0x30 }, uint8_t{ 0x55 }, uint8_t{ 0xAA }, uint8_t{ 0xFF } }) {
+				for (std::size_t z: { std::size_t{ 8 }, std::size_t{ 9 }, std::size_t{ 12 }, std::size_t{ 15 }, std::size_t{ 16 }, std::size_t{ 23 } }) {
+					poison_stack(pattern);
+					std::string s(z, '0');
+					s += "7";
+					v_type v{ 99 };
+					auto res = vn::from_chars(s.data(), s.data() + s.size(), v);
+					if (res.ec != std::errc{} || v != static_cast<v_type>(7) || res.ptr != s.data() + s.size()) {
+						return false;
+					}
+				}
+			}
+			return true;
+		});
+
+		rt_ut::unit_test<name + "-all zeros exact widths", true>::assert_eq(true, [] {
+			for (std::size_t z: { std::size_t{ 1 }, std::size_t{ 2 }, std::size_t{ 3 }, std::size_t{ 4 }, std::size_t{ 5 }, std::size_t{ 6 }, std::size_t{ 7 }, std::size_t{ 8 },
+					 std::size_t{ 9 }, std::size_t{ 15 }, std::size_t{ 16 }, std::size_t{ 17 }, std::size_t{ 24 } }) {
+				std::string s(z, '0');
+				v_type v{ 99 };
+				auto res = vn::from_chars(s.data(), s.data() + s.size(), v);
+				if (res.ec != std::errc{} || v != static_cast<v_type>(0) || res.ptr != s.data() + s.size()) {
+					return false;
+				}
+			}
+			return true;
+		});
+
+		rt_ut::unit_test<name + "-zeros then non-digit", true>::assert_eq(true, [] {
+			for (std::size_t z: { std::size_t{ 1 }, std::size_t{ 4 }, std::size_t{ 7 }, std::size_t{ 8 }, std::size_t{ 12 }, std::size_t{ 16 } }) {
+				std::string s(z, '0');
+				s += "x";
+				v_type v{ 99 };
+				auto res = vn::from_chars(s.data(), s.data() + s.size(), v);
+				if (res.ec != std::errc{} || v != static_cast<v_type>(0) || res.ptr != s.data() + static_cast<std::ptrdiff_t>(z)) {
+					return false;
+				}
+			}
+			return true;
+		});
+
+		rt_ut::unit_test<name + "-zeros embedded in value", true>::assert_eq(true, [] {
+			std::string s = "00000000102";
+			v_type v{};
+			auto res = vn::from_chars(s.data(), s.data() + s.size(), v);
+			if constexpr (sizeof(v_type) < 2) {
+				if (res.ec != std::errc{} || v != static_cast<v_type>(102) || res.ptr != s.data() + s.size()) {
+					return false;
+				}
+			} else {
+				if (res.ec != std::errc{} || v != static_cast<v_type>(102) || res.ptr != s.data() + s.size()) {
+					return false;
+				}
+			}
+			return true;
+		});
+
+		rt_ut::unit_test<name + "-exact buffer end no sentinel", true>::assert_eq(true, [] {
+			for (std::size_t z: { std::size_t{ 7 }, std::size_t{ 8 }, std::size_t{ 9 }, std::size_t{ 16 } }) {
+				std::vector<char> buf(z, '0');
+				buf.back() = '5';
+				v_type v{ 99 };
+				auto res = vn::from_chars(buf.data(), buf.data() + buf.size(), v);
+				if (res.ec != std::errc{} || v != static_cast<v_type>(5) || res.ptr != buf.data() + buf.size()) {
+					return false;
+				}
+			}
+			return true;
+		});
 	}
 }
 
