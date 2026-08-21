@@ -307,34 +307,29 @@ namespace vn {
 			}
 		};
 
-		template<uint8_types v_type> struct to_chars_impl<v_type> {
-			VN_FORCE_INLINE static char* impl(char* __restrict buf VN_LIFETIME_BOUND, char* __restrict end, const v_type value) noexcept {
-				if (value > 99U) {
-					if (end - buf < 3) {
-						return nullptr;
-					}
-					uint32_t packed;
-					std::memcpy(&packed, &char_table_1_byte_data[value], 4ULL);
-					std::memcpy(buf, &packed, 2ULL);
-					buf[2] = static_cast<char>(packed >> 16);
-					return buf + 3;
-				}
-				if (value > 9U) {
-					if (end - buf < 2) {
-						return nullptr;
-					}
-					std::memcpy(buf, char_table_2_digit_data + value, 2ULL);
-					return buf + 2;
-				}
-				if (end - buf < 1) {
+		template<vn::detail::uint8_types v_type> struct to_chars_impl<v_type> {
+			VN_FORCE_INLINE static char* impl(char* __restrict buf VN_LIFETIME_BOUND, char* __restrict last, const v_type value) noexcept {
+				const uint32_t t = static_cast<uint8_t>(value);
+				uint32_t packed;
+				std::memcpy(&packed, &vn::detail::char_table_1_byte_data[t], 4ULL);
+				const uint32_t len{ packed >> 24 };
+				if (static_cast<uint64_t>(last - buf) < static_cast<uint64_t>(len)) {
 					return nullptr;
 				}
-				buf[0] = static_cast<char>(value) + static_cast<char>('0');
-				return buf + 1;
+				if (len == 3u) {
+					std::memcpy(buf, &packed, 2ULL);
+					buf[2] = static_cast<char>(packed >> 16);
+				} else if (len == 2u) {
+					std::memcpy(buf, &packed, 2ULL);
+				} else {
+					buf[0] = static_cast<char>(packed);
+				}
+				return buf + len;
 			}
 		};
 
-		template<int_types v_type> struct to_chars_impl<v_type> {
+		template<vn::detail::int_types v_type>
+		struct to_chars_impl<v_type> {
 			VN_FORCE_INLINE static char* impl_negative(char* __restrict buf VN_LIFETIME_BOUND, char* __restrict end, const v_type value) noexcept {
 				using unsigned_type = std::make_unsigned_t<v_type>;
 				return (end - buf > 0)

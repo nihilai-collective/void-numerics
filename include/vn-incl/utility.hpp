@@ -4,32 +4,47 @@
 
 #pragma once
 
-#include <rt-ut>
 #include <vn-incl/concepts.hpp>
 
 namespace vn {
 
 	namespace detail {
 
-		template<vn::detail::integer_types v_type> struct max_digits {
-		  private:
-			using limits = std::numeric_limits<v_type>;
-			using U		 = std::make_unsigned_t<v_type>;
-
-			static consteval uint64_t count_digits(U value_new) {
-				uint64_t digits = 0;
-				do {
-					value_new /= 10;
-					++digits;
-				} while (value_new != 0);
-				return digits;
-			}
-
-		  public:
-			static constexpr uint64_t value = count_digits(static_cast<U>(limits::max()));
+		template<integer_types v_type> static constexpr uint64_t max_digits_v {
+			[]<integer_types v_type_local> {
+				if constexpr (integral8_types<v_type_local>) {
+					return 3ULL;
+				} else if constexpr (integral16_types<v_type_local>) {
+					return 5ULL;
+				} else if constexpr (integral32_types<v_type_local>) {
+					return 10ULL;
+				} else if constexpr (int64_types<v_type_local>) {
+					return 19ULL;
+				} else if constexpr (uint64_types<v_type_local>) {
+					return 20ULL;
+				} else {
+					static_assert(sizeof(v_type_local) != 0, "Unsupported integer type being passed.");
+				}
+			}.template operator()<v_type>()
 		};
 
-		template<vn::detail::integer_types v_type> static constexpr uint64_t max_digits_v = max_digits<v_type>::value;
+		template<integer_types v_type> using next_higher_int_t = decltype([]<integer_types v_type_local> {
+			if constexpr (uint8_types<v_type_local>) {
+				return uint16_t{};
+			} else if constexpr (uint16_types<v_type_local>) {
+				return uint32_t{};
+			} else if constexpr (uint32_types<v_type_local>) {
+				return uint64_t{};
+			} else if constexpr (int8_types<v_type_local>) {
+				return int16_t{};
+			} else if constexpr (int16_types<v_type_local>) {
+				return int32_t{};
+			} else if constexpr (int32_types<v_type_local>) {
+				return int64_t{};
+			} else {
+				static_assert(sizeof(v_type_local) != 0, "Unsupported integer type being passed.");
+			}
+		}.template operator()<v_type>());
 
 		template<uint8_types auto repeat, uint_types v_type> static constexpr uint64_t repeat_bytes_v = static_cast<v_type>(0x0101010101010101ull) * static_cast<v_type>(repeat);
 
@@ -40,26 +55,6 @@ namespace vn {
 				return 0ULL;
 			}
 		}() };
-
-		template<integer_types v_type> using next_higher_int_t = decltype([]<integer_types v_type_new> {
-			if constexpr (uint8_types<v_type_new>) {
-				return uint16_t{};
-			} else if constexpr (uint16_types<v_type_new>) {
-				return uint32_t{};
-			} else if constexpr (uint32_types<v_type_new>) {
-				return uint64_t{};
-			} else if constexpr (uint64_types<v_type_new>) {
-				return uint64_t{};
-			} else if constexpr (int8_types<v_type_new>) {
-				return int16_t{};
-			} else if constexpr (int16_types<v_type_new>) {
-				return int32_t{};
-			} else if constexpr (int32_types<v_type_new>) {
-				return int64_t{};
-			} else {
-				return int64_t{};
-			} 
-		}.template operator()<v_type>());
 
 		template<typename v_type, bool negative> static constexpr std::array<std::make_unsigned_t<v_type>, 256> gen_raw_comp_vals() {
 			constexpr auto max_value{ static_cast<std::make_unsigned_t<v_type>>(std::numeric_limits<base_t<v_type>>::max()) + comp_val_addition<negative> };
@@ -85,7 +80,7 @@ namespace vn {
 			return c - static_cast<uint8_t>('0') < 10;
 		}
 
-		template<std::endian, uint64_t size = 0> struct int_tables_impl {};
+		template<std::endian, uint64_t size = 0> struct int_tables_impl;
 
 		template<std::endian endianness> static constexpr std::array<uint32_t, 256> gen_1() {
 			std::array<uint32_t, 256> t{};
@@ -93,9 +88,10 @@ namespace vn {
 				const uint32_t d0	 = static_cast<uint8_t>('0') + (i / 100);
 				const uint32_t d1	 = static_cast<uint8_t>('0') + (i / 10 % 10);
 				const uint32_t d2	 = static_cast<uint8_t>('0') + (i % 10);
-				const uint32_t shift = 8u * (3u - (i > 99u ? 3u : i > 9u ? 2u : 1u));
+				const uint32_t len	 = i > 99u ? 3u : i > 9u ? 2u : 1u;
+				const uint32_t shift = 8u * (3u - len);
 				if constexpr (endianness == std::endian::little) {
-					t[i] = (d0 | (d1 << 8) | (d2 << 16)) >> shift;
+					t[i] = ((d0 | (d1 << 8) | (d2 << 16)) >> shift) | (len << 24);
 				} else {
 					t[i] = ((d0 << 24) | (d1 << 16) | (d2 << 8)) << shift;
 				}
@@ -194,7 +190,7 @@ namespace vn {
 #endif
 
 		struct multiply_and_shift {
-			VN_FORCE_INLINE static uint64_t impl(uint64_t  value) noexcept {
+			VN_FORCE_INLINE static uint64_t impl(uint64_t value) noexcept {
 #if VN_COMPILER_CLANG || VN_COMPILER_GCC
 				return static_cast<uint64_t>(static_cast<__uint128_t>(value) * 12379400392853802749ULL >> 90);
 #elif VN_COMPILER_MSVC

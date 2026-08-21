@@ -1,4 +1,4 @@
-﻿# MIT License#
+﻿# MIT License
 # Copyright (c) 2026 Nihilai Collective Corp#
 # (license text unchanged)
 # CMakeLists.txt

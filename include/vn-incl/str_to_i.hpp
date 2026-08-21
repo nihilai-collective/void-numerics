@@ -4,13 +4,7 @@
 
 #pragma once
 
-#include <charconv>
-#include <concepts>
-#include <cstdint>
-#include <cstring>
-#include <bit>
-#include <system_error>
-#include <type_traits>
+#include <vn-incl/utility.hpp>
 
 namespace vn {
 
@@ -49,7 +43,7 @@ namespace vn {
 		}
 
 		VN_FORCE_INLINE constexpr const char* strip_tag(uintptr_t ptr) noexcept {
-			return std::bit_cast<const char*>(ptr & detail::addr_mask);
+			return std::bit_cast<const char*>(ptr & addr_mask);
 		}
 
 		VN_FORCE_INLINE constexpr uint64_t get_tag(const uintptr_t ptr) noexcept {
@@ -86,27 +80,37 @@ namespace vn {
 			return static_cast<uint8_t>(raw - static_cast<uint8_t>(0x30)) > 9u;
 		}
 
-		template<uint64_types v_type> VN_FORCE_INLINE static uint64_t fold(v_type raw) noexcept {
-			const v_type sub{ raw - repeat_bytes_v<static_cast<uint8_t>(0x30), v_type> };
-			v_type val = (sub * 10 + (sub >> 8)) & 0x00FF00FF00FF00FFULL;
-			val		   = (val * 100 + (val >> 16)) & 0x0000FFFF0000FFFFULL;
-			return (val * 10000 + (val >> 32)) & 0x00000000FFFFFFFFULL;
-		}
+		template<typename v_type> struct fold;
 
-		template<uint32_types v_type> VN_FORCE_INLINE static uint64_t fold(v_type raw) noexcept {
-			const v_type sub{ static_cast<v_type>(raw - repeat_bytes_v<static_cast<uint8_t>(0x30), v_type>) };
-			v_type val = (sub * 10 + (sub >> 8)) & 0x00FF00FFUL;
-			return static_cast<uint64_t>((val * 100 + (val >> 16)) & 0x0000FFFFUL);
-		}
+		template<uint64_types v_type> struct fold<v_type> {
+			VN_FORCE_INLINE static uint64_t impl(v_type raw) noexcept {
+				const v_type sub{ raw - repeat_bytes_v<static_cast<uint8_t>(0x30), v_type> };
+				v_type val = (sub * 10 + (sub >> 8)) & 0x00FF00FF00FF00FFULL;
+				val		   = (val * 100 + (val >> 16)) & 0x0000FFFF0000FFFFULL;
+				return (val * 10000 + (val >> 32)) & 0x00000000FFFFFFFFULL;
+			}
+		};
 
-		template<uint16_types v_type> VN_FORCE_INLINE static uint64_t fold(v_type raw) noexcept {
-			const v_type sub{ static_cast<v_type>(raw - repeat_bytes_v<static_cast<uint8_t>(0x30), v_type>) };
-			return static_cast<uint64_t>((sub & 0xFFU) * 10 + (sub >> 8));
-		}
+		template<uint32_types v_type> struct fold<v_type> {
+			VN_FORCE_INLINE static uint64_t impl(v_type raw) noexcept {
+				const v_type sub{ static_cast<v_type>(raw - repeat_bytes_v<static_cast<uint8_t>(0x30), v_type>) };
+				v_type val = (sub * 10 + (sub >> 8)) & 0x00FF00FFUL;
+				return static_cast<uint64_t>((val * 100 + (val >> 16)) & 0x0000FFFFUL);
+			}
+		};
 
-		template<uint8_types v_type> VN_FORCE_INLINE static uint64_t fold(v_type raw) noexcept {
-			return static_cast<uint64_t>(static_cast<v_type>(raw - static_cast<v_type>(0x30)));
-		}
+		template<uint16_types v_type> struct fold<v_type> {
+			VN_FORCE_INLINE static uint64_t impl(v_type raw) noexcept {
+				const v_type sub{ static_cast<v_type>(raw - repeat_bytes_v<static_cast<uint8_t>(0x30), v_type>) };
+				return static_cast<uint64_t>((sub & 0xFFU) * 10 + (sub >> 8));
+			}
+		};
+
+		template<uint8_types v_type> struct fold<v_type> {
+			VN_FORCE_INLINE static uint64_t impl(v_type raw) noexcept {
+				return static_cast<uint64_t>(static_cast<v_type>(raw - static_cast<v_type>(0x30)));
+			}
+		};
 
 		template<integer_types v_type, uint64_t length> struct parse_fixed;
 
@@ -116,7 +120,7 @@ namespace vn {
 				if (incorrect(s1)) [[unlikely]] {
 					return { 0, 0 };
 				}
-				return { static_cast<v_type>(fold(s1)), 1 };
+				return { static_cast<v_type>(fold<uint8_t>::impl(s1)), 1 };
 			}
 		};
 
@@ -127,7 +131,7 @@ namespace vn {
 				if (m2) [[unlikely]] {
 					return { 0, static_cast<uint64_t>(count_zeros(m2) >> 3) };
 				}
-				return { static_cast<v_type>(fold(s2)), 2 };
+				return { static_cast<v_type>(fold<uint16_t>::impl(s2)), 2 };
 			}
 		};
 
@@ -142,7 +146,7 @@ namespace vn {
 				if (incorrect(s1)) [[unlikely]] {
 					return { 0, 2 };
 				}
-				return { static_cast<v_type>(fold(s2) * 10ULL + fold(s1)), 3 };
+				return { static_cast<v_type>(fold<uint16_t>::impl(s2) * 10ULL + fold<uint8_t>::impl(s1)), 3 };
 			}
 		};
 
@@ -153,7 +157,7 @@ namespace vn {
 				if (m4) [[unlikely]] {
 					return { 0, static_cast<uint64_t>(count_zeros(m4) >> 3) };
 				}
-				return { static_cast<v_type>(fold(s4)), 4 };
+				return { static_cast<v_type>(fold<uint32_t>::impl(s4)), 4 };
 			}
 		};
 
@@ -168,7 +172,7 @@ namespace vn {
 				if (incorrect(s1)) [[unlikely]] {
 					return { 0, 4 };
 				}
-				return { static_cast<v_type>(fold(s4) * 10ULL + fold(s1)), 5 };
+				return { static_cast<v_type>(fold<uint32_t>::impl(s4) * 10ULL + fold<uint8_t>::impl(s1)), 5 };
 			}
 		};
 
@@ -184,7 +188,7 @@ namespace vn {
 				if (m2) [[unlikely]] {
 					return { 0, 4ULL + static_cast<uint64_t>(count_zeros(m2) >> 3) };
 				}
-				return { static_cast<v_type>(fold(s4) * 100ULL + fold(s2)), 6 };
+				return { static_cast<v_type>(fold<uint32_t>::impl(s4) * 100ULL + fold<uint16_t>::impl(s2)), 6 };
 			}
 		};
 
@@ -204,7 +208,7 @@ namespace vn {
 				if (incorrect(s1)) [[unlikely]] {
 					return { 0, 6 };
 				}
-				return { static_cast<v_type>(fold(s4) * 1000ULL + fold(s2) * 10ULL + fold(s1)), 7 };
+				return { static_cast<v_type>(fold<uint32_t>::impl(s4) * 1000ULL + fold<uint16_t>::impl(s2) * 10ULL + fold<uint8_t>::impl(s1)), 7 };
 			}
 		};
 
@@ -215,7 +219,7 @@ namespace vn {
 				if (m8) [[unlikely]] {
 					return { 0, count_zeros(m8) >> 3 };
 				}
-				return { static_cast<v_type>(fold(s8)), 8 };
+				return { static_cast<v_type>(fold<uint64_t>::impl(s8)), 8 };
 			}
 		};
 
@@ -230,7 +234,7 @@ namespace vn {
 				if (incorrect(s1)) [[unlikely]] {
 					return { 0, 8 };
 				}
-				return { static_cast<v_type>(fold(s8) * 10ULL + fold(s1)), 9 };
+				return { static_cast<v_type>(fold<uint64_t>::impl(s8) * 10ULL + fold<uint8_t>::impl(s1)), 9 };
 			}
 		};
 
@@ -246,7 +250,7 @@ namespace vn {
 				if (m2) [[unlikely]] {
 					return { 0, 8ULL + static_cast<uint64_t>(count_zeros(m2) >> 3) };
 				}
-				return { static_cast<v_type>(fold(s8) * 100ULL + fold(s2)), 10 };
+				return { static_cast<v_type>(fold<uint64_t>::impl(s8) * 100ULL + fold<uint16_t>::impl(s2)), 10 };
 			}
 		};
 
@@ -266,7 +270,7 @@ namespace vn {
 				if (incorrect(s1)) [[unlikely]] {
 					return { 0, 10 };
 				}
-				return { static_cast<v_type>(fold(s8) * 1000ULL + fold(s2) * 10ULL + fold(s1)), 11 };
+				return { static_cast<v_type>(fold<uint64_t>::impl(s8) * 1000ULL + fold<uint16_t>::impl(s2) * 10ULL + fold<uint8_t>::impl(s1)), 11 };
 			}
 		};
 
@@ -282,7 +286,7 @@ namespace vn {
 				if (m4) [[unlikely]] {
 					return { 0, 8ULL + static_cast<uint64_t>(count_zeros(m4) >> 3) };
 				}
-				return { static_cast<v_type>(fold(s8) * 10000ULL + fold(s4)), 12 };
+				return { static_cast<v_type>(fold<uint64_t>::impl(s8) * 10000ULL + fold<uint32_t>::impl(s4)), 12 };
 			}
 		};
 
@@ -302,7 +306,7 @@ namespace vn {
 				if (incorrect(s1)) [[unlikely]] {
 					return { 0, 12 };
 				}
-				return { static_cast<v_type>(fold(s8) * 100000ULL + fold(s4) * 10ULL + fold(s1)), 13 };
+				return { static_cast<v_type>(fold<uint64_t>::impl(s8) * 100000ULL + fold<uint32_t>::impl(s4) * 10ULL + fold<uint8_t>::impl(s1)), 13 };
 			}
 		};
 
@@ -323,7 +327,7 @@ namespace vn {
 				if (m2) [[unlikely]] {
 					return { 0, 12ULL + static_cast<uint64_t>(count_zeros(m2) >> 3) };
 				}
-				return { static_cast<v_type>(fold(s8) * 1000000ULL + fold(s4) * 100ULL + fold(s2)), 14 };
+				return { static_cast<v_type>(fold<uint64_t>::impl(s8) * 1000000ULL + fold<uint32_t>::impl(s4) * 100ULL + fold<uint16_t>::impl(s2)), 14 };
 			}
 		};
 
@@ -348,7 +352,7 @@ namespace vn {
 				if (incorrect(s1)) [[unlikely]] {
 					return { 0, 14 };
 				}
-				return { static_cast<v_type>(fold(s8) * 10000000ULL + fold(s4) * 1000ULL + fold(s2) * 10ULL + fold(s1)), 15 };
+				return { static_cast<v_type>(fold<uint64_t>::impl(s8) * 10000000ULL + fold<uint32_t>::impl(s4) * 1000ULL + fold<uint16_t>::impl(s2) * 10ULL + fold<uint8_t>::impl(s1)), 15 };
 			}
 		};
 
@@ -364,7 +368,7 @@ namespace vn {
 				if (m8b) [[unlikely]] {
 					return { 0, 8ULL + (count_zeros(m8b) >> 3) };
 				}
-				return { static_cast<v_type>(fold(s8a) * 100000000ULL + fold(s8b)), 16 };
+				return { static_cast<v_type>(fold<uint64_t>::impl(s8a) * 100000000ULL + fold<uint64_t>::impl(s8b)), 16 };
 			}
 		};
 
@@ -384,7 +388,7 @@ namespace vn {
 				if (incorrect(s1)) [[unlikely]] {
 					return { 0, 16 };
 				}
-				return { static_cast<v_type>(fold(s8a) * 1000000000ULL + fold(s8b) * 10ULL + fold(s1)), 17 };
+				return { static_cast<v_type>(fold<uint64_t>::impl(s8a) * 1000000000ULL + fold<uint64_t>::impl(s8b) * 10ULL + fold<uint8_t>::impl(s1)), 17 };
 			}
 		};
 
@@ -405,7 +409,7 @@ namespace vn {
 				if (m2) [[unlikely]] {
 					return { 0, 16ULL + static_cast<uint64_t>(count_zeros(m2) >> 3) };
 				}
-				return { static_cast<v_type>(fold(s8a) * 10000000000ULL + fold(s8b) * 100ULL + fold(s2)), 18 };
+				return { static_cast<v_type>(fold<uint64_t>::impl(s8a) * 10000000000ULL + fold<uint64_t>::impl(s8b) * 100ULL + fold<uint16_t>::impl(s2)), 18 };
 			}
 		};
 
@@ -430,7 +434,9 @@ namespace vn {
 				if (incorrect(s1)) [[unlikely]] {
 					return { 0, 18 };
 				}
-				return { static_cast<v_type>(fold(s8a) * 100000000000ULL + fold(s8b) * 1000ULL + fold(s2) * 10ULL + fold(s1)), 19 };
+				return { static_cast<v_type>(
+							 fold<uint64_t>::impl(s8a) * 100000000000ULL + fold<uint64_t>::impl(s8b) * 1000ULL + fold<uint16_t>::impl(s2) * 10ULL + fold<uint8_t>::impl(s1)),
+					19 };
 			}
 		};
 
@@ -451,7 +457,7 @@ namespace vn {
 				if (m4) [[unlikely]] {
 					return { 0, 16ULL + static_cast<uint64_t>(count_zeros(m4) >> 3) };
 				}
-				return { static_cast<v_type>(fold(s8a) * 1000000000000ULL + fold(s8b) * 10000ULL + fold(s4)), 20 };
+				return { static_cast<v_type>(fold<uint64_t>::impl(s8a) * 1000000000000ULL + fold<uint64_t>::impl(s8b) * 10000ULL + fold<uint32_t>::impl(s4)), 20 };
 			}
 		};
 
@@ -474,9 +480,9 @@ namespace vn {
 
 		template<> struct first_non_zero_byte<3ULL> {
 			VN_FORCE_INLINE static uint64_t impl(const uint8_t* __restrict str) noexcept {
-				uint64_t chunk{};
+				uint32_t chunk{};
 				std::memcpy(&chunk, str, 3);
-				uint64_t diff = chunk ^ repeat_bytes_v<static_cast<uint8_t>(0x30), uint32_t>;
+				uint32_t diff = chunk ^ repeat_bytes_v<static_cast<uint8_t>(0x30), uint32_t>;
 				return (diff == 0) ? 3 : count_zeros(diff) >> 3;
 			}
 		};
@@ -572,7 +578,7 @@ namespace vn {
 
 		template<bool negative, integer_types v_type, integer_types v_type_local>
 		VN_FORCE_INLINE const uint8_t* finish(const uint8_t* it VN_LIFETIME_BOUND, v_type& value_new, v_type_local value) {
-			alignas(64) static constexpr v_type_local zero_val{ 0 };
+			static constexpr v_type_local zero_val{ 0 };
 			if constexpr (negative) {
 				value_new = static_cast<v_type>(zero_val - value);
 			} else {
@@ -609,132 +615,52 @@ namespace vn {
 				return set_tag(iter, parse_status::invalid_argument);
 			}
 
-			if (iter < end) [[likely]] {
-				c = static_cast<uint8_t>(*iter);
-				if (vn_is_digit(c)) [[likely]] {
-					value = static_cast<v_type_local>(value * 10 + (c - '0'));
-					++iter;
-				} else {
-					return finish<negative>(iter, value_new, value);
-				}
+			if (iter < end && (static_cast<void>(c = static_cast<uint8_t>(*iter)), vn_is_digit(c))) [[likely]] {
+				value = static_cast<v_type_local>(value * 10 + (c - '0'));
+				++iter;
 			} else {
 				return finish<negative>(iter, value_new, value);
 			}
 
 			if constexpr (sizeof(v_type) > 1) {
-				if (iter < end) [[likely]] {
-					c = static_cast<uint8_t>(*iter);
-					if (vn_is_digit(c)) [[likely]] {
-						value = static_cast<v_type_local>(value * 10 + (c - '0'));
-						++iter;
-					} else {
-						return finish<negative>(iter, value_new, value);
-					}
-				} else {
-					return finish<negative>(iter, value_new, value);
-				}
-
-				if (iter < end) [[likely]] {
-					c = static_cast<uint8_t>(*iter);
-					if (vn_is_digit(c)) [[likely]] {
-						value = static_cast<v_type_local>(value * 10 + (c - '0'));
-						++iter;
-					} else {
-						return finish<negative>(iter, value_new, value);
-					}
-				} else {
-					return finish<negative>(iter, value_new, value);
-				}
-
-				if constexpr (sizeof(v_type) > 2) {
-					if (iter < end) [[likely]] {
-						c = static_cast<uint8_t>(*iter);
-						if (vn_is_digit(c)) [[likely]] {
-							value = static_cast<v_type_local>(value * 10 + (c - '0'));
-							++iter;
-						} else {
-							return finish<negative>(iter, value_new, value);
-						}
-					} else {
-						return finish<negative>(iter, value_new, value);
-					}
-
-					if (iter < end) [[likely]] {
-						c = static_cast<uint8_t>(*iter);
-						if (vn_is_digit(c)) [[likely]] {
-							value = static_cast<v_type_local>(value * 10 + (c - '0'));
-							++iter;
-						} else {
-							return finish<negative>(iter, value_new, value);
-						}
-					} else {
-						return finish<negative>(iter, value_new, value);
-					}
-
-					if (iter < end) [[likely]] {
-						c = static_cast<uint8_t>(*iter);
-						if (vn_is_digit(c)) [[likely]] {
-							value = static_cast<v_type_local>(value * 10 + (c - '0'));
-							++iter;
-						} else {
-							return finish<negative>(iter, value_new, value);
-						}
-					} else {
-						return finish<negative>(iter, value_new, value);
-					}
-
-					if (iter < end) [[likely]] {
-						c = static_cast<uint8_t>(*iter);
-						if (vn_is_digit(c)) [[likely]] {
-							value = static_cast<v_type_local>(value * 10 + (c - '0'));
-							++iter;
-						} else {
-							return finish<negative>(iter, value_new, value);
-						}
-					} else {
-						return finish<negative>(iter, value_new, value);
-					}
-
-					if (iter < end) [[likely]] {
-						c = static_cast<uint8_t>(*iter);
-						if (vn_is_digit(c)) [[likely]] {
-							value = static_cast<v_type_local>(value * 10 + (c - '0'));
-							++iter;
-						} else {
-							return finish<negative>(iter, value_new, value);
-						}
-					} else {
-						return finish<negative>(iter, value_new, value);
-					}
-				}
-			}
-
-			if (iter < end) [[likely]] {
-				c = static_cast<uint8_t>(*iter);
-				if (vn_is_digit(c)) [[likely]] {
-					if (static_cast<uint64_t>(value) > static_cast<uint64_t>(comp_vals<v_type, negative>[c])) [[unlikely]] {
-						while (++iter < end && vn_is_digit(static_cast<uint8_t>(*iter))) {
-						}
-						return set_tag(iter, parse_status::result_out_of_range);
-					}
+				if (iter < end && (static_cast<void>(c = static_cast<uint8_t>(*iter)), vn_is_digit(c))) [[likely]] {
 					value = static_cast<v_type_local>(value * 10 + (c - '0'));
 					++iter;
 				} else {
 					return finish<negative>(iter, value_new, value);
 				}
+
+				if (iter < end && (static_cast<void>(c = static_cast<uint8_t>(*iter)), vn_is_digit(c))) [[likely]] {
+					value = static_cast<v_type_local>(value * 10 + (c - '0'));
+					++iter;
+				} else {
+					return finish<negative>(iter, value_new, value);
+				}
+			}
+
+			if (iter < end && (static_cast<void>(c = static_cast<uint8_t>(*iter)), vn_is_digit(c))) [[likely]] {
+				if (static_cast<uint64_t>(value) > static_cast<uint64_t>(comp_vals<v_type, negative>[c])) [[unlikely]] {
+					while (++iter < end && vn_is_digit(static_cast<uint8_t>(*iter))) {
+					}
+					return set_tag(iter, parse_status::result_out_of_range);
+				}
+				value = static_cast<v_type_local>(value * 10 + (c - '0'));
+				++iter;
 			} else {
 				return finish<negative>(iter, value_new, value);
 			}
+
 			if (iter == end) [[likely]] {
 				return finish<negative>(iter, value_new, value);
 			} else {
-				if (!vn_is_digit(static_cast<uint8_t>(*iter))) {
+				if (vn_is_digit(static_cast<uint8_t>(*iter))) {
+					while (iter < end && vn_is_digit(static_cast<uint8_t>(*iter))) {
+						++iter;
+					}
+					return set_tag(iter, parse_status::result_out_of_range);					
+				} else {
 					return finish<negative>(iter, value_new, value);
 				}
-				while (iter < end && vn_is_digit(static_cast<uint8_t>(*iter))) {
-					++iter;
-				}
-				return set_tag(iter, parse_status::result_out_of_range);
 			}
 		}
 
