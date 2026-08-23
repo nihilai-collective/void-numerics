@@ -75,7 +75,7 @@ jobs:
 
       - name: Configure CMake (Windows)
         if: runner.os == 'Windows'
-        run: cmake -S . -B ./Build -DCMAKE_BUILD_TYPE=Debug -DVN_UNIT_TESTS=TRUE -DVN_ASAN=TRUE -DVN_UBSAN=TRUE
+        run: cmake -S . -B ./Build -DCMAKE_BUILD_TYPE=Debug -DCMAKE_CXX_COMPILER=cl -DVN_UNIT_TESTS=TRUE -DVN_ASAN=TRUE -DVN_UBSAN=TRUE
 
       - name: Build
         run: cmake --build ./Build --config=Debug -v

@@ -9,7 +9,7 @@ include(FetchContent)
 
 FetchContent_Declare(
   rt-ut
-  GIT_REPOSITORY https://github.com/realtimechris/rt-ut.git
+  GIT_REPOSITORY https://github.com/nihilai-collective/rt-ut.git
   GIT_TAG main
   GIT_SHALLOW TRUE
 )
@@ -92,6 +92,7 @@ set(VN_CLANG_COMPILER_OPTIONS
     -Werror
     -Wno-unsafe-buffer-usage
     -Wno-c++20-extensions
+    -Wno-keyword-macro
     -Wextra
     -Wall
     -Wno-c++98-compat-pedantic

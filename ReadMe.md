@@ -49,6 +49,8 @@ Every conversion is exhaustively unit-tested against `std::to_chars` / `std::fro
 
 ## Quick Start
 
+Warning: Include only <void-numerics>. Direct inclusion of internal headers may cause unrelated code in the including translation unit to become uncompilable.
+
 ### Integer → string
 
 ```cpp

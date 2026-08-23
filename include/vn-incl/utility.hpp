@@ -1,6 +1,9 @@
-// SPDX-License-Identifier: MIT
-// Copyright (c) 2026 Nihilai Collective Corp
-// vn-incl/utility.hpp
+/*
+ * SPDX-License-Identifier: MIT
+ * Copyright (c) 2026 Nihilai Collective Corp
+ * https://github.com/nihilai-collective/void-numerics
+ * include/vn-incl/utility.hpp
+ */
 
 #pragma once
 
@@ -10,23 +13,21 @@ namespace vn {
 
 	namespace detail {
 
-		template<integer_types v_type> static constexpr uint64_t max_digits_v {
-			[]<integer_types v_type_local> {
-				if constexpr (integral8_types<v_type_local>) {
-					return 3ULL;
-				} else if constexpr (integral16_types<v_type_local>) {
-					return 5ULL;
-				} else if constexpr (integral32_types<v_type_local>) {
-					return 10ULL;
-				} else if constexpr (int64_types<v_type_local>) {
-					return 19ULL;
-				} else if constexpr (uint64_types<v_type_local>) {
-					return 20ULL;
-				} else {
-					static_assert(sizeof(v_type_local) != 0, "Unsupported integer type being passed.");
-				}
-			}.template operator()<v_type>()
-		};
+		template<integer_types v_type> static constexpr uint64_t max_digits_v{ []<integer_types v_type_local> {
+			if constexpr (integral8_types<v_type_local>) {
+				return 3ULL;
+			} else if constexpr (integral16_types<v_type_local>) {
+				return 5ULL;
+			} else if constexpr (integral32_types<v_type_local>) {
+				return 10ULL;
+			} else if constexpr (int64_types<v_type_local>) {
+				return 19ULL;
+			} else if constexpr (uint64_types<v_type_local>) {
+				return 20ULL;
+			} else {
+				static_assert(sizeof(v_type_local) != 0, "Unsupported integer type being passed.");
+			}
+		}.template operator()<v_type>() };
 
 		template<integer_types v_type> using next_higher_int_t = decltype([]<integer_types v_type_local> {
 			if constexpr (uint8_types<v_type_local>) {
@@ -76,7 +77,7 @@ namespace vn {
 
 		template<typename v_type, bool negative> alignas(64) static constexpr const std::make_unsigned_t<v_type>* __restrict comp_vals{ raw_comp_vals<v_type, negative>.data() };
 
-		template<uint8_types v_type> VN_FORCE_INLINE static constexpr bool is_digit(v_type c) noexcept {
+		template<uint8_types v_type> VN_INLINE static constexpr bool is_digit(v_type c) noexcept {
 			return c - static_cast<uint8_t>('0') < 10;
 		}
 
@@ -168,42 +169,40 @@ namespace vn {
 
 		template<uint64_t size> using int_tables = int_tables_impl<std::endian::native, size>;
 
-#if !VN_COMPILER_CLANG && !VN_COMPILER_GCC && !VN_COMPILER_MSVC
-
-		template<uint_types v_type_new> VN_FORCE_INLINE static v_type_new mulhi_portable(v_type_new a, v_type_new b) noexcept {
-			using v_type						 = next_higher_int_t<v_type_new>;
-			static constexpr uint64_t total_bits = sizeof(v_type_new) * 8;
-			static constexpr uint64_t half_bits	 = total_bits / 2;
-			static constexpr v_type mask		 = (static_cast<v_type>(1) << half_bits) - 1;
-			const v_type a_lo					 = static_cast<v_type>(a) & mask;
-			const v_type a_hi					 = static_cast<v_type>(a) >> half_bits;
-			const v_type b_lo					 = static_cast<v_type>(b) & mask;
-			const v_type b_hi					 = static_cast<v_type>(b) >> half_bits;
-			const v_type lo_lo					 = a_lo * b_lo;
-			const v_type hi_lo					 = a_hi * b_lo;
-			const v_type lo_hi					 = a_lo * b_hi;
-			const v_type hi_hi					 = a_hi * b_hi;
-			const v_type cross					 = (lo_lo >> half_bits) + (hi_lo & mask) + (lo_hi & mask);
-			return static_cast<v_type_new>(hi_hi + (hi_lo >> half_bits) + (lo_hi >> half_bits) + (cross >> half_bits));
+		template<uint_types v_type> VN_INLINE static constexpr v_type mulhi_portable(v_type a, v_type b) noexcept {
+			static constexpr uint64_t half_bits = sizeof(v_type) * 4;
+			static constexpr v_type mask		= (static_cast<v_type>(1) << half_bits) - 1;
+			const v_type a_lo					= a & mask;
+			const v_type a_hi					= a >> half_bits;
+			const v_type b_lo					= b & mask;
+			const v_type b_hi					= b >> half_bits;
+			const v_type lo_lo					= a_lo * b_lo;
+			const v_type hi_lo					= a_hi * b_lo;
+			const v_type lo_hi					= a_lo * b_hi;
+			const v_type hi_hi					= a_hi * b_hi;
+			const v_type cross					= (lo_lo >> half_bits) + (hi_lo & mask) + (lo_hi & mask);
+			return static_cast<v_type>(hi_hi + (hi_lo >> half_bits) + (lo_hi >> half_bits) + (cross >> half_bits));
 		}
 
-#endif
-
 		struct multiply_and_shift {
-			VN_FORCE_INLINE static uint64_t impl(uint64_t value) noexcept {
+			VN_INLINE static constexpr uint64_t impl(uint64_t value) noexcept {
+				if consteval {
+					return static_cast<uint64_t>(mulhi_portable<uint64_t>(value, 12379400392853802749ULL) >> (90 - 64ULL));
+				} else {
 #if VN_COMPILER_CLANG || VN_COMPILER_GCC
-				return static_cast<uint64_t>(static_cast<__uint128_t>(value) * 12379400392853802749ULL >> 90);
+					return static_cast<uint64_t>(static_cast<__uint128_t>(value) * 12379400392853802749ULL >> 90);
 #elif VN_COMPILER_MSVC
-				uint64_t high_part;
-				_umul128(12379400392853802749ULL, value, &high_part);
-				return static_cast<uint64_t>(high_part >> (90 - 64ULL));
+					uint64_t high_part;
+					_umul128(12379400392853802749ULL, value, &high_part);
+					return static_cast<uint64_t>(high_part >> (90 - 64ULL));
 #else
-				return static_cast<uint64_t>(mulhi_portable(value, 12379400392853802749ULL) >> (90 - 64ULL));
+					return static_cast<uint64_t>(mulhi_portable<uint64_t>(value, 12379400392853802749ULL) >> (90 - 64ULL));
 #endif
+				}
 			}
 		};
 
-		template<uint_types v_type> VN_FORCE_INLINE v_type min(v_type val_01, v_type val_02) noexcept {
+		template<uint_types v_type> VN_INLINE v_type min(v_type val_01, v_type val_02) noexcept {
 			return val_01 < val_02 ? val_01 : val_02;
 		}
 

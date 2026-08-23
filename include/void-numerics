@@ -8,3 +8,19 @@
 #include <vn-incl/str_to_i.hpp>
 #include <vn-incl/d_to_str.hpp>
 #include <vn-incl/str_to_d.hpp>
+
+#if defined(reinterpret_cast)
+	#undef reinterpret_cast
+#endif
+
+#if defined(const_cast)
+	#undef const_cast
+#endif
+
+#if defined(dynamic_cast)
+	#undef dynamic_cast
+#endif
+
+#if defined(memcpy)
+	#undef memcpy
+#endif

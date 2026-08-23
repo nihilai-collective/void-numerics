@@ -1,6 +1,9 @@
-// SPDX-License-Identifier: MIT
-// Copyright (c) 2026 Nihilai Collective Corp
-// unit-tests/i_to_str.hpp
+/*
+ * SPDX-License-Identifier: MIT
+ * Copyright (c) 2026 Nihilai Collective Corp
+ * https://github.com/nihilai-collective/void-numerics
+ * unit-tests/i_to_str.hpp
+ */
 
 #pragma once
 
@@ -24,26 +27,32 @@ namespace vn_to_chars_tests {
 		});
 
 		rt_ut::unit_test<name + "-to_chars single digits 1-9", true>::assert_eq(true, [] {
-			for (v_type i = 1; i <= 9; ++i)
-				if (!chars_match<v_type>(i))
+			for (v_type i = 1; i <= 9; ++i) {
+				if (!chars_match<v_type>(i)) {
 					return false;
+				}
+			}
 			return true;
 		});
 
 		rt_ut::unit_test<name + "-to_chars powers of 2", true>::assert_eq(true, [] {
-			for (uint32_t i = 0; i < sizeof(v_type) * 8 - (vn::detail::int_types<v_type> ? 1 : 0); ++i)
-				if (!chars_match<v_type>(static_cast<v_type>(v_type{ 1 } << i)))
+			for (uint32_t i = 0; i < sizeof(v_type) * 8 - (vn::detail::int_types<v_type> ? 1 : 0); ++i) {
+				if (!chars_match<v_type>(static_cast<v_type>(v_type{ 1 } << i))) {
 					return false;
+				}
+			}
 			return true;
 		});
 
 		rt_ut::unit_test<name + "-to_chars powers of 10", true>::assert_eq(true, [] {
 			v_type p = 1;
 			for (uint32_t i = 0; i < vn::detail::max_digits_v<v_type>; ++i) {
-				if (!chars_match<v_type>(p))
+				if (!chars_match<v_type>(p)) {
 					return false;
-				if (p > std::numeric_limits<v_type>::max() / 10)
+				}
+				if (p > std::numeric_limits<v_type>::max() / 10) {
 					break;
+				}
 				p *= 10;
 			}
 			return true;
@@ -53,8 +62,9 @@ namespace vn_to_chars_tests {
 			v_type p = 0;
 			for (uint32_t i = 0; i < vn::detail::max_digits_v<v_type>; ++i) {
 				p = static_cast<v_type>(p * 10 + 1);
-				if (!chars_match<v_type>(p))
+				if (!chars_match<v_type>(p)) {
 					return false;
+				}
 			}
 			return true;
 		});
@@ -83,10 +93,12 @@ namespace vn_to_chars_tests {
 			rt_ut::unit_test<name + "-to_chars exhaustive all values", true>::assert_eq(true, [] {
 				v_type v = std::numeric_limits<v_type>::min();
 				do {
-					if (!chars_match<v_type>(v))
+					if (!chars_match<v_type>(v)) {
 						return false;
-					if (v == std::numeric_limits<v_type>::max())
+					}
+					if (v == std::numeric_limits<v_type>::max()) {
 						break;
+					}
 					++v;
 				} while (true);
 				return true;
@@ -111,19 +123,23 @@ namespace vn_to_chars_tests {
 			});
 
 			rt_ut::unit_test<name + "-to_chars negative powers of 2", true>::assert_eq(true, [] {
-				for (uint32_t i = 0; i < sizeof(v_type) * 8 - 1; ++i)
-					if (!chars_match<v_type>(static_cast<v_type>(-(v_type{ 1 } << i))))
+				for (uint32_t i = 0; i < sizeof(v_type) * 8 - 1; ++i) {
+					if (!chars_match<v_type>(static_cast<v_type>(-(v_type{ 1 } << i)))) {
 						return false;
+					}
+				}
 				return true;
 			});
 
 			rt_ut::unit_test<name + "-to_chars negative powers of 10", true>::assert_eq(true, [] {
 				v_type p = -1;
 				for (uint32_t i = 0; i < vn::detail::max_digits_v<v_type>; ++i) {
-					if (!chars_match<v_type>(p))
+					if (!chars_match<v_type>(p)) {
 						return false;
-					if (p < std::numeric_limits<v_type>::min() / 10)
+					}
+					if (p < std::numeric_limits<v_type>::min() / 10) {
 						break;
+					}
 					p *= 10;
 				}
 				return true;
@@ -133,10 +149,12 @@ namespace vn_to_chars_tests {
 				v_type p = 0;
 				for (uint32_t i = 0; i < vn::detail::max_digits_v<v_type>; ++i) {
 					p = static_cast<v_type>(p * 10 - 1);
-					if (!chars_match<v_type>(p))
+					if (!chars_match<v_type>(p)) {
 						return false;
-					if (p < std::numeric_limits<v_type>::min() / 10)
+					}
+					if (p < std::numeric_limits<v_type>::min() / 10) {
 						break;
+					}
 				}
 				return true;
 			});
@@ -156,8 +174,9 @@ namespace vn_to_chars_tests {
 				auto end = vn::to_chars(buf, buf + 32, v);
 				v_type parsed{};
 				vn::from_chars(buf, end.ptr, parsed);
-				if (parsed != v)
+				if (parsed != v) {
 					return false;
+				}
 			}
 			return true;
 		});
@@ -175,8 +194,9 @@ namespace vn_to_chars_tests {
 					auto end = vn::to_chars(buf, buf + 32, v);
 					v_type parsed{};
 					vn::from_chars(buf, end.ptr, parsed);
-					if (parsed != v)
+					if (parsed != v) {
 						return false;
+					}
 				}
 				return true;
 			});
@@ -206,9 +226,9 @@ namespace vn_to_chars_tests {
 
 }
 
-template<vn::detail::conversion_classes> struct tests;
+template<detail::conversion_classes> struct tests;
 
-template<> struct tests<vn::detail::conversion_classes::i_to_str> {
+template<> struct tests<detail::conversion_classes::i_to_str> {
 	static void impl() {
 		vn_to_chars_tests::test_function<"uint8", uint8_t>();
 		vn_to_chars_tests::test_function<"int8", int8_t>();
@@ -216,7 +236,7 @@ template<> struct tests<vn::detail::conversion_classes::i_to_str> {
 		vn_to_chars_tests::test_function<"int16", int16_t>();
 		vn_to_chars_tests::test_function<"uint32", uint32_t>();
 		vn_to_chars_tests::test_function<"int32", int32_t>();
-		vn_to_chars_tests::test_function<"uint64_t", uint64_t>();
+		vn_to_chars_tests::test_function<"uint64", uint64_t>();
 		vn_to_chars_tests::test_function<"int64", int64_t>();
 	}
 };

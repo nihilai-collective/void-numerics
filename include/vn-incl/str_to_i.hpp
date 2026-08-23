@@ -1,6 +1,9 @@
-// SPDX-License-Identifier: MIT
-// Copyright (c) 2026 Nihilai Collective Corp
-// vn-incl/str_to_i.hpp
+/*
+ * SPDX-License-Identifier: MIT
+ * Copyright (c) 2026 Nihilai Collective Corp
+ * https://github.com/nihilai-collective/void-numerics
+ * include/vn-incl/str_to_i.hpp
+ */
 
 #pragma once
 
@@ -10,7 +13,7 @@ namespace vn {
 
 	namespace detail {
 
-		template<uint_types v_type> VN_FORCE_INLINE v_type count_zeros(v_type value) noexcept {
+		template<uint_types v_type> VN_INLINE constexpr v_type count_zeros(v_type value) noexcept {
 			if constexpr (std::endian::native == std::endian::little) {
 				return static_cast<v_type>(std::countr_zero(value));
 			} else {
@@ -37,16 +40,22 @@ namespace vn {
 
 		static_assert(sizeof(uintptr_t) == 8, "pointer tagging requires 64-bit pointers");
 
-		VN_FORCE_INLINE constexpr const uint8_t* set_tag(const uint8_t* ptr, parse_status status) noexcept {
-			const uintptr_t raw = std::bit_cast<uintptr_t>(ptr);
-			return std::bit_cast<const uint8_t*>((raw & addr_mask) | (static_cast<uintptr_t>(status) << tag_shift));
+		static constexpr uint64_t ce_stride = 256;
+
+		VN_INLINE constexpr const uint8_t* set_tag(const uint8_t* ptr VN_LIFETIME_BOUND, parse_status status) noexcept {
+			if consteval {
+				return ptr + static_cast<uint64_t>(status) * ce_stride;
+			} else {
+				const uintptr_t raw = std::bit_cast<uintptr_t>(ptr);
+				return std::bit_cast<const uint8_t*>((raw & addr_mask) | (static_cast<uintptr_t>(status) << tag_shift));
+			}
 		}
 
-		VN_FORCE_INLINE constexpr const char* strip_tag(uintptr_t ptr) noexcept {
+		VN_INLINE constexpr const char* strip_tag(uintptr_t ptr) noexcept {
 			return std::bit_cast<const char*>(ptr & addr_mask);
 		}
 
-		VN_FORCE_INLINE constexpr uint64_t get_tag(const uintptr_t ptr) noexcept {
+		VN_INLINE constexpr uint64_t get_tag(const uintptr_t ptr) noexcept {
 			return (ptr & tag_mask) >> tag_shift;
 		}
 
@@ -55,17 +64,17 @@ namespace vn {
 			uint64_t digits;
 		};
 
-		template<uint_types v_type> VN_FORCE_INLINE static v_type load(const uint8_t* __restrict str) noexcept {
+		template<uint_types v_type> VN_INLINE static constexpr v_type load(const uint8_t* __restrict str) noexcept {
 			v_type chunk;
-			std::memcpy(&chunk, str, sizeof(v_type));
+			pow2_memcpy_wrapper<sizeof(v_type)>(&chunk, str);
 			return chunk;
 		}
 
-		template<uint8_types v_type> VN_FORCE_INLINE static v_type load(const uint8_t* __restrict str) noexcept {
+		template<uint8_types v_type> VN_INLINE static constexpr v_type load(const uint8_t* __restrict str) noexcept {
 			return *str;
 		}
 
-		template<uint_types v_type> VN_FORCE_INLINE static v_type mask(v_type raw) noexcept {
+		template<uint_types v_type> VN_INLINE static constexpr v_type mask(v_type raw) noexcept {
 			static constexpr v_type high{ repeat_bytes_v<static_cast<uint8_t>(0x80), v_type> };
 			static constexpr v_type low{ repeat_bytes_v<static_cast<uint8_t>(0x7F), v_type> };
 			static constexpr v_type up{ repeat_bytes_v<static_cast<uint8_t>(0x46), v_type> };
@@ -76,14 +85,14 @@ namespace vn {
 			return static_cast<v_type>((raw & high) | above | (~at_least & high));
 		}
 
-		VN_FORCE_INLINE static bool incorrect(uint8_t raw) noexcept {
+		VN_INLINE static constexpr bool incorrect(uint8_t raw) noexcept {
 			return static_cast<uint8_t>(raw - static_cast<uint8_t>(0x30)) > 9u;
 		}
 
 		template<typename v_type> struct fold;
 
 		template<uint64_types v_type> struct fold<v_type> {
-			VN_FORCE_INLINE static uint64_t impl(v_type raw) noexcept {
+			VN_INLINE static constexpr uint64_t impl(v_type raw) noexcept {
 				const v_type sub{ raw - repeat_bytes_v<static_cast<uint8_t>(0x30), v_type> };
 				v_type val = (sub * 10 + (sub >> 8)) & 0x00FF00FF00FF00FFULL;
 				val		   = (val * 100 + (val >> 16)) & 0x0000FFFF0000FFFFULL;
@@ -92,7 +101,7 @@ namespace vn {
 		};
 
 		template<uint32_types v_type> struct fold<v_type> {
-			VN_FORCE_INLINE static uint64_t impl(v_type raw) noexcept {
+			VN_INLINE static constexpr uint64_t impl(v_type raw) noexcept {
 				const v_type sub{ static_cast<v_type>(raw - repeat_bytes_v<static_cast<uint8_t>(0x30), v_type>) };
 				v_type val = (sub * 10 + (sub >> 8)) & 0x00FF00FFUL;
 				return static_cast<uint64_t>((val * 100 + (val >> 16)) & 0x0000FFFFUL);
@@ -100,14 +109,14 @@ namespace vn {
 		};
 
 		template<uint16_types v_type> struct fold<v_type> {
-			VN_FORCE_INLINE static uint64_t impl(v_type raw) noexcept {
+			VN_INLINE static constexpr uint64_t impl(v_type raw) noexcept {
 				const v_type sub{ static_cast<v_type>(raw - repeat_bytes_v<static_cast<uint8_t>(0x30), v_type>) };
 				return static_cast<uint64_t>((sub & 0xFFU) * 10 + (sub >> 8));
 			}
 		};
 
 		template<uint8_types v_type> struct fold<v_type> {
-			VN_FORCE_INLINE static uint64_t impl(v_type raw) noexcept {
+			VN_INLINE static constexpr uint64_t impl(v_type raw) noexcept {
 				return static_cast<uint64_t>(static_cast<v_type>(raw - static_cast<v_type>(0x30)));
 			}
 		};
@@ -115,7 +124,7 @@ namespace vn {
 		template<integer_types v_type, uint64_t length> struct parse_fixed;
 
 		template<integer_types v_type> struct parse_fixed<v_type, 1ULL> {
-			VN_FORCE_INLINE static parse_chunk_result<v_type> impl(const uint8_t* __restrict str) noexcept {
+			VN_INLINE static constexpr parse_chunk_result<v_type> impl(const uint8_t* __restrict str) noexcept {
 				const uint8_t s1 = load<uint8_t>(str);
 				if (incorrect(s1)) [[unlikely]] {
 					return { 0, 0 };
@@ -125,7 +134,7 @@ namespace vn {
 		};
 
 		template<integer_types v_type> struct parse_fixed<v_type, 2ULL> {
-			VN_FORCE_INLINE static parse_chunk_result<v_type> impl(const uint8_t* __restrict str) noexcept {
+			VN_INLINE static constexpr parse_chunk_result<v_type> impl(const uint8_t* __restrict str) noexcept {
 				const uint16_t s2 = load<uint16_t>(str);
 				const uint16_t m2 = mask(s2);
 				if (m2) [[unlikely]] {
@@ -136,7 +145,7 @@ namespace vn {
 		};
 
 		template<integer_types v_type> struct parse_fixed<v_type, 3ULL> {
-			VN_FORCE_INLINE static parse_chunk_result<v_type> impl(const uint8_t* __restrict str) noexcept {
+			VN_INLINE static constexpr parse_chunk_result<v_type> impl(const uint8_t* __restrict str) noexcept {
 				const uint16_t s2 = load<uint16_t>(str);
 				const uint8_t s1  = load<uint8_t>(str + 2);
 				const uint16_t m2 = mask(s2);
@@ -151,7 +160,7 @@ namespace vn {
 		};
 
 		template<integer_types v_type> struct parse_fixed<v_type, 4ULL> {
-			VN_FORCE_INLINE static parse_chunk_result<v_type> impl(const uint8_t* __restrict str) noexcept {
+			VN_INLINE static constexpr parse_chunk_result<v_type> impl(const uint8_t* __restrict str) noexcept {
 				const uint32_t s4 = load<uint32_t>(str);
 				const uint32_t m4 = mask(s4);
 				if (m4) [[unlikely]] {
@@ -162,7 +171,7 @@ namespace vn {
 		};
 
 		template<integer_types v_type> struct parse_fixed<v_type, 5ULL> {
-			VN_FORCE_INLINE static parse_chunk_result<v_type> impl(const uint8_t* __restrict str) noexcept {
+			VN_INLINE static constexpr parse_chunk_result<v_type> impl(const uint8_t* __restrict str) noexcept {
 				const uint32_t s4 = load<uint32_t>(str);
 				const uint8_t s1  = load<uint8_t>(str + 4);
 				const uint32_t m4 = mask(s4);
@@ -177,7 +186,7 @@ namespace vn {
 		};
 
 		template<integer_types v_type> struct parse_fixed<v_type, 6ULL> {
-			VN_FORCE_INLINE static parse_chunk_result<v_type> impl(const uint8_t* __restrict str) noexcept {
+			VN_INLINE static constexpr parse_chunk_result<v_type> impl(const uint8_t* __restrict str) noexcept {
 				const uint32_t s4 = load<uint32_t>(str);
 				const uint16_t s2 = load<uint16_t>(str + 4);
 				const uint32_t m4 = mask(s4);
@@ -193,7 +202,7 @@ namespace vn {
 		};
 
 		template<integer_types v_type> struct parse_fixed<v_type, 7ULL> {
-			VN_FORCE_INLINE static parse_chunk_result<v_type> impl(const uint8_t* __restrict str) noexcept {
+			VN_INLINE static constexpr parse_chunk_result<v_type> impl(const uint8_t* __restrict str) noexcept {
 				const uint32_t s4 = load<uint32_t>(str);
 				const uint16_t s2 = load<uint16_t>(str + 4);
 				const uint8_t s1  = load<uint8_t>(str + 6);
@@ -213,7 +222,7 @@ namespace vn {
 		};
 
 		template<integer_types v_type> struct parse_fixed<v_type, 8ULL> {
-			VN_FORCE_INLINE static parse_chunk_result<v_type> impl(const uint8_t* __restrict str) noexcept {
+			VN_INLINE static constexpr parse_chunk_result<v_type> impl(const uint8_t* __restrict str) noexcept {
 				const uint64_t s8 = load<uint64_t>(str);
 				const uint64_t m8 = mask(s8);
 				if (m8) [[unlikely]] {
@@ -224,7 +233,7 @@ namespace vn {
 		};
 
 		template<integer_types v_type> struct parse_fixed<v_type, 9ULL> {
-			VN_FORCE_INLINE static parse_chunk_result<v_type> impl(const uint8_t* __restrict str) noexcept {
+			VN_INLINE static constexpr parse_chunk_result<v_type> impl(const uint8_t* __restrict str) noexcept {
 				const uint64_t s8 = load<uint64_t>(str);
 				const uint8_t s1  = load<uint8_t>(str + 8);
 				const uint64_t m8 = mask(s8);
@@ -239,7 +248,7 @@ namespace vn {
 		};
 
 		template<integer_types v_type> struct parse_fixed<v_type, 10ULL> {
-			VN_FORCE_INLINE static parse_chunk_result<v_type> impl(const uint8_t* __restrict str) noexcept {
+			VN_INLINE static constexpr parse_chunk_result<v_type> impl(const uint8_t* __restrict str) noexcept {
 				const uint64_t s8 = load<uint64_t>(str);
 				const uint16_t s2 = load<uint16_t>(str + 8);
 				const uint64_t m8 = mask(s8);
@@ -255,7 +264,7 @@ namespace vn {
 		};
 
 		template<integer_types v_type> struct parse_fixed<v_type, 11ULL> {
-			VN_FORCE_INLINE static parse_chunk_result<v_type> impl(const uint8_t* __restrict str) noexcept {
+			VN_INLINE static constexpr parse_chunk_result<v_type> impl(const uint8_t* __restrict str) noexcept {
 				const uint64_t s8 = load<uint64_t>(str);
 				const uint16_t s2 = load<uint16_t>(str + 8);
 				const uint8_t s1  = load<uint8_t>(str + 10);
@@ -275,7 +284,7 @@ namespace vn {
 		};
 
 		template<integer_types v_type> struct parse_fixed<v_type, 12ULL> {
-			VN_FORCE_INLINE static parse_chunk_result<v_type> impl(const uint8_t* __restrict str) noexcept {
+			VN_INLINE static constexpr parse_chunk_result<v_type> impl(const uint8_t* __restrict str) noexcept {
 				const uint64_t s8 = load<uint64_t>(str);
 				const uint32_t s4 = load<uint32_t>(str + 8);
 				const uint64_t m8 = mask(s8);
@@ -291,7 +300,7 @@ namespace vn {
 		};
 
 		template<integer_types v_type> struct parse_fixed<v_type, 13ULL> {
-			VN_FORCE_INLINE static parse_chunk_result<v_type> impl(const uint8_t* __restrict str) noexcept {
+			VN_INLINE static constexpr parse_chunk_result<v_type> impl(const uint8_t* __restrict str) noexcept {
 				const uint64_t s8 = load<uint64_t>(str);
 				const uint32_t s4 = load<uint32_t>(str + 8);
 				const uint8_t s1  = load<uint8_t>(str + 12);
@@ -311,7 +320,7 @@ namespace vn {
 		};
 
 		template<integer_types v_type> struct parse_fixed<v_type, 14ULL> {
-			VN_FORCE_INLINE static parse_chunk_result<v_type> impl(const uint8_t* __restrict str) noexcept {
+			VN_INLINE static constexpr parse_chunk_result<v_type> impl(const uint8_t* __restrict str) noexcept {
 				const uint64_t s8 = load<uint64_t>(str);
 				const uint32_t s4 = load<uint32_t>(str + 8);
 				const uint16_t s2 = load<uint16_t>(str + 12);
@@ -332,7 +341,7 @@ namespace vn {
 		};
 
 		template<integer_types v_type> struct parse_fixed<v_type, 15ULL> {
-			VN_FORCE_INLINE static parse_chunk_result<v_type> impl(const uint8_t* __restrict str) noexcept {
+			VN_INLINE static constexpr parse_chunk_result<v_type> impl(const uint8_t* __restrict str) noexcept {
 				const uint64_t s8 = load<uint64_t>(str);
 				const uint32_t s4 = load<uint32_t>(str + 8);
 				const uint16_t s2 = load<uint16_t>(str + 12);
@@ -352,12 +361,14 @@ namespace vn {
 				if (incorrect(s1)) [[unlikely]] {
 					return { 0, 14 };
 				}
-				return { static_cast<v_type>(fold<uint64_t>::impl(s8) * 10000000ULL + fold<uint32_t>::impl(s4) * 1000ULL + fold<uint16_t>::impl(s2) * 10ULL + fold<uint8_t>::impl(s1)), 15 };
+				return { static_cast<v_type>(
+							 fold<uint64_t>::impl(s8) * 10000000ULL + fold<uint32_t>::impl(s4) * 1000ULL + fold<uint16_t>::impl(s2) * 10ULL + fold<uint8_t>::impl(s1)),
+					15 };
 			}
 		};
 
 		template<integer_types v_type> struct parse_fixed<v_type, 16ULL> {
-			VN_FORCE_INLINE static parse_chunk_result<v_type> impl(const uint8_t* __restrict str) noexcept {
+			VN_INLINE static constexpr parse_chunk_result<v_type> impl(const uint8_t* __restrict str) noexcept {
 				const uint64_t s8a = load<uint64_t>(str);
 				const uint64_t s8b = load<uint64_t>(str + 8);
 				const uint64_t m8a = mask(s8a);
@@ -373,7 +384,7 @@ namespace vn {
 		};
 
 		template<integer_types v_type> struct parse_fixed<v_type, 17ULL> {
-			VN_FORCE_INLINE static parse_chunk_result<v_type> impl(const uint8_t* __restrict str) noexcept {
+			VN_INLINE static constexpr parse_chunk_result<v_type> impl(const uint8_t* __restrict str) noexcept {
 				const uint64_t s8a = load<uint64_t>(str);
 				const uint64_t s8b = load<uint64_t>(str + 8);
 				const uint8_t s1   = load<uint8_t>(str + 16);
@@ -393,7 +404,7 @@ namespace vn {
 		};
 
 		template<integer_types v_type> struct parse_fixed<v_type, 18ULL> {
-			VN_FORCE_INLINE static parse_chunk_result<v_type> impl(const uint8_t* __restrict str) noexcept {
+			VN_INLINE static constexpr parse_chunk_result<v_type> impl(const uint8_t* __restrict str) noexcept {
 				const uint64_t s8a = load<uint64_t>(str);
 				const uint64_t s8b = load<uint64_t>(str + 8);
 				const uint16_t s2  = load<uint16_t>(str + 16);
@@ -414,7 +425,7 @@ namespace vn {
 		};
 
 		template<integer_types v_type> struct parse_fixed<v_type, 19ULL> {
-			VN_FORCE_INLINE static parse_chunk_result<v_type> impl(const uint8_t* __restrict str) noexcept {
+			VN_INLINE static constexpr parse_chunk_result<v_type> impl(const uint8_t* __restrict str) noexcept {
 				const uint64_t s8a = load<uint64_t>(str);
 				const uint64_t s8b = load<uint64_t>(str + 8);
 				const uint16_t s2  = load<uint16_t>(str + 16);
@@ -441,7 +452,7 @@ namespace vn {
 		};
 
 		template<integer_types v_type> struct parse_fixed<v_type, 20ULL> {
-			VN_FORCE_INLINE static parse_chunk_result<v_type> impl(const uint8_t* __restrict str) noexcept {
+			VN_INLINE static constexpr parse_chunk_result<v_type> impl(const uint8_t* __restrict str) noexcept {
 				const uint64_t s8a = load<uint64_t>(str);
 				const uint64_t s8b = load<uint64_t>(str + 8);
 				const uint32_t s4  = load<uint32_t>(str + 16);
@@ -461,115 +472,43 @@ namespace vn {
 			}
 		};
 
-		template<uint64_types auto byte_count> struct first_non_zero_byte;
-
-		template<> struct first_non_zero_byte<1ULL> {
-			VN_FORCE_INLINE static uint64_t impl(const uint8_t* __restrict str) noexcept {
-				return *str == '0';
-			}
-		};
-
-		template<> struct first_non_zero_byte<2ULL> {
-			VN_FORCE_INLINE static uint64_t impl(const uint8_t* __restrict str) noexcept {
-				uint16_t chunk;
-				std::memcpy(&chunk, str, 2);
-				uint16_t diff = chunk ^ repeat_bytes_v<static_cast<uint8_t>(0x30), uint16_t>;
-				return static_cast<uint64_t>((diff == 0) ? 2 : count_zeros(diff) >> 3);
-			}
-		};
-
-		template<> struct first_non_zero_byte<3ULL> {
-			VN_FORCE_INLINE static uint64_t impl(const uint8_t* __restrict str) noexcept {
-				uint32_t chunk{};
-				std::memcpy(&chunk, str, 3);
-				uint32_t diff = chunk ^ repeat_bytes_v<static_cast<uint8_t>(0x30), uint32_t>;
-				return (diff == 0) ? 3 : count_zeros(diff) >> 3;
-			}
-		};
-
-		template<> struct first_non_zero_byte<4ULL> {
-			VN_FORCE_INLINE static uint64_t impl(const uint8_t* __restrict str) noexcept {
-				uint32_t chunk;
-				std::memcpy(&chunk, str, 4);
-				uint32_t diff = chunk ^ repeat_bytes_v<static_cast<uint8_t>(0x30), uint32_t>;
-				return (diff == 0) ? 4 : count_zeros(diff) >> 3;
-			}
-		};
-
-		template<> struct first_non_zero_byte<5ULL> {
-			VN_FORCE_INLINE static uint64_t impl(const uint8_t* __restrict str) noexcept {
-				uint64_t chunk{};
-				std::memcpy(&chunk, str, 5);
-				uint64_t diff = chunk ^ repeat_bytes_v<static_cast<uint8_t>(0x30), uint64_t>;
-				return (diff == 0) ? 5 : count_zeros(diff) >> 3;
-			}
-		};
-
-		template<> struct first_non_zero_byte<6ULL> {
-			VN_FORCE_INLINE static uint64_t impl(const uint8_t* __restrict str) noexcept {
-				uint64_t chunk{};
-				std::memcpy(&chunk, str, 6);
-				uint64_t diff = chunk ^ repeat_bytes_v<static_cast<uint8_t>(0x30), uint64_t>;
-				return (diff == 0) ? 6 : count_zeros(diff) >> 3;
-			}
-		};
-
-		template<> struct first_non_zero_byte<7ULL> {
-			VN_FORCE_INLINE static uint64_t impl(const uint8_t* __restrict str) noexcept {
-				uint64_t chunk{};
-				std::memcpy(&chunk, str, 7);
-				uint64_t diff = chunk ^ repeat_bytes_v<static_cast<uint8_t>(0x30), uint64_t>;
-				return (diff == 0) ? 7 : count_zeros(diff) >> 3;
-			}
-		};
-
-		template<> struct first_non_zero_byte<8ULL> {
-			VN_FORCE_INLINE static uint64_t impl(const uint8_t* __restrict str) noexcept {
-				uint64_t chunk;
-				std::memcpy(&chunk, str, 8);
-				uint64_t diff = chunk ^ repeat_bytes_v<static_cast<uint8_t>(0x30), uint64_t>;
-				return (diff == 0) ? 8 : count_zeros(diff) >> 3;
-			}
-		};
-
-		template<uint_types v_type> VN_FORCE_INLINE bool vn_is_digit(v_type value) noexcept {
+		template<uint_types v_type> VN_INLINE constexpr bool vn_is_digit(v_type value) noexcept {
 			return ((static_cast<uint8_t>(value - '0')) < 10);
 		}
 
-		VN_FORCE_INLINE static const uint8_t* trim_leading_zeros(const uint8_t* __restrict iter VN_LIFETIME_BOUND, const uint8_t* __restrict end) noexcept {
-			switch (static_cast<uint64_t>(end - iter)) {
-				case 1: {
-					return iter + first_non_zero_byte<1ULL>::impl(iter);
-				}
-				case 2: {
-					return iter + first_non_zero_byte<2ULL>::impl(iter);
-				}
-				case 3: {
-					return iter + first_non_zero_byte<3ULL>::impl(iter);
-				}
-				case 4: {
-					return iter + first_non_zero_byte<4ULL>::impl(iter);
-				}
-				case 5: {
-					return iter + first_non_zero_byte<5ULL>::impl(iter);
-				}
-				case 6: {
-					return iter + first_non_zero_byte<6ULL>::impl(iter);
-				}
-				case 7: {
-					return iter + first_non_zero_byte<7ULL>::impl(iter);
-				}
-				case 8: {
-					return iter + first_non_zero_byte<8ULL>::impl(iter);
-				}
-				default: {
-					while (iter + 8 <= end && *iter == '0') {
-						iter += first_non_zero_byte<8ULL>::impl(iter);
+		VN_INLINE static constexpr const uint8_t* trim_leading_zeros(const uint8_t* __restrict iter VN_LIFETIME_BOUND, const uint8_t* __restrict end) noexcept {
+			{
+				static constexpr uint64_t zeros{ repeat_bytes_v<static_cast<uint8_t>('0'), uint64_t> };
+				while (end - iter >= 8) {
+					const uint64_t chunk{ load<uint64_t>(iter) ^ zeros };
+					if (chunk) {
+						return iter + (count_zeros(chunk) >> 3);
 					}
-					while (iter < end && *iter == '0') {
-						++iter;
-					}
+					iter += 8;
 				}
+			}
+			{
+				static constexpr uint32_t zeros{ repeat_bytes_v<static_cast<uint8_t>('0'), uint32_t> };
+				if (end - iter >= 4) {
+					const uint32_t chunk{ load<uint32_t>(iter) ^ zeros };
+					if (chunk) {
+						return iter + (count_zeros(chunk) >> 3);
+					}
+					iter += 4;
+				}
+			}
+			{
+				static constexpr uint16_t zeros{ repeat_bytes_v<static_cast<uint8_t>('0'), uint16_t> };
+				if (end - iter >= 2) {
+					const uint16_t chunk{ static_cast<uint16_t>(load<uint16_t>(iter) ^ zeros) };
+					if (chunk) {
+						return iter + (count_zeros(chunk) >> 3);
+					}
+					iter += 2;
+				}
+			}
+			if (iter < end && *iter == '0') {
+				++iter;
 			}
 			return iter;
 		}
@@ -577,7 +516,7 @@ namespace vn {
 		template<typename v_type> struct from_chars_impl;
 
 		template<bool negative, integer_types v_type, integer_types v_type_local>
-		VN_FORCE_INLINE const uint8_t* finish(const uint8_t* it VN_LIFETIME_BOUND, v_type& value_new, v_type_local value) {
+		VN_INLINE constexpr const uint8_t* finish(const uint8_t* it VN_LIFETIME_BOUND, v_type& value_new, v_type_local value) {
 			static constexpr v_type_local zero_val{ 0 };
 			if constexpr (negative) {
 				value_new = static_cast<v_type>(zero_val - value);
@@ -589,7 +528,7 @@ namespace vn {
 
 		template<bool negative, typename v_type>
 			requires(integral16_types<v_type> || integral8_types<v_type>)
-		VN_FORCE_INLINE static const uint8_t* parse_integer(v_type& value_new, const uint8_t* __restrict iter VN_LIFETIME_BOUND, const uint8_t* __restrict end) noexcept {
+		VN_INLINE static constexpr const uint8_t* parse_integer(v_type& value_new, const uint8_t* __restrict iter VN_LIFETIME_BOUND, const uint8_t* __restrict end) noexcept {
 			using v_type_local = std::make_unsigned_t<v_type>;
 
 			if (iter >= end) [[unlikely]] {
@@ -657,7 +596,7 @@ namespace vn {
 					while (iter < end && vn_is_digit(static_cast<uint8_t>(*iter))) {
 						++iter;
 					}
-					return set_tag(iter, parse_status::result_out_of_range);					
+					return set_tag(iter, parse_status::result_out_of_range);
 				} else {
 					return finish<negative>(iter, value_new, value);
 				}
@@ -667,7 +606,7 @@ namespace vn {
 		template<integer_types v_type, uint64_t max_length> struct dispatch_table;
 
 		template<integer_types v_type> struct dispatch_table<v_type, 10ULL> {
-			VN_FORCE_INLINE static parse_chunk_result<v_type> impl(const uint8_t* __restrict str, uint64_t length) noexcept {
+			VN_INLINE static constexpr parse_chunk_result<v_type> impl(const uint8_t* __restrict str, uint64_t length) noexcept {
 				switch (length) {
 					case 1:
 						return parse_fixed<v_type, 1ULL>::impl(str);
@@ -694,7 +633,7 @@ namespace vn {
 		};
 
 		template<integer_types v_type> struct dispatch_table<v_type, 19ULL> {
-			VN_FORCE_INLINE static parse_chunk_result<v_type> impl(const uint8_t* __restrict str, uint64_t length) noexcept {
+			VN_INLINE static constexpr parse_chunk_result<v_type> impl(const uint8_t* __restrict str, uint64_t length) noexcept {
 				switch (length) {
 					case 1:
 						return parse_fixed<v_type, 1ULL>::impl(str);
@@ -739,7 +678,7 @@ namespace vn {
 		};
 
 		template<integer_types v_type> struct dispatch_table<v_type, 20ULL> {
-			VN_FORCE_INLINE static parse_chunk_result<v_type> impl(const uint8_t* __restrict str, uint64_t length) noexcept {
+			VN_INLINE static constexpr parse_chunk_result<v_type> impl(const uint8_t* __restrict str, uint64_t length) noexcept {
 				switch (length) {
 					case 1:
 						return parse_fixed<v_type, 1ULL>::impl(str);
@@ -785,14 +724,14 @@ namespace vn {
 			}
 		};
 
-		template<bool negative, integer_types v_type> VN_FORCE_INLINE static bool exceeds_limit(v_type value, uint8_t last) noexcept {
+		template<bool negative, integer_types v_type> VN_INLINE static constexpr bool exceeds_limit(v_type value, uint8_t last) noexcept {
 			return static_cast<uint64_t>(value) > static_cast<uint64_t>(comp_vals<v_type, negative>[last]);
 		}
 
 		template<typename v_type> struct from_chars_impl;
 
 		template<bool negative, integer_types v_type>
-		VN_FORCE_INLINE static const uint8_t* parse_integer(v_type& value_new, const uint8_t* __restrict iter VN_LIFETIME_BOUND, const uint8_t* __restrict end) noexcept {
+		VN_INLINE static constexpr const uint8_t* parse_integer(v_type& value_new, const uint8_t* __restrict iter VN_LIFETIME_BOUND, const uint8_t* __restrict end) noexcept {
 			using v_type_local = std::make_unsigned_t<v_type>;
 
 			if (iter >= end) [[unlikely]] {
@@ -865,7 +804,8 @@ namespace vn {
 		}
 
 		template<int_types v_type> struct from_chars_impl<v_type> {
-			VN_FORCE_INLINE static const uint8_t* impl(v_type& value, const uint8_t* __restrict iter VN_LIFETIME_BOUND, const uint8_t* __restrict end VN_LIFETIME_BOUND) noexcept {
+			VN_INLINE static constexpr const uint8_t* impl(v_type& value, const uint8_t* __restrict iter VN_LIFETIME_BOUND,
+				const uint8_t* __restrict end VN_LIFETIME_BOUND) noexcept {
 				if (iter >= end) [[unlikely]] {
 					return set_tag(iter, parse_status::invalid_argument);
 				}
@@ -880,7 +820,8 @@ namespace vn {
 		};
 
 		template<uint_types v_type> struct from_chars_impl<v_type> {
-			VN_FORCE_INLINE static const uint8_t* impl(v_type& value, const uint8_t* __restrict iter VN_LIFETIME_BOUND, const uint8_t* __restrict end VN_LIFETIME_BOUND) noexcept {
+			VN_INLINE static constexpr const uint8_t* impl(v_type& value, const uint8_t* __restrict iter VN_LIFETIME_BOUND,
+				const uint8_t* __restrict end VN_LIFETIME_BOUND) noexcept {
 				if (iter >= end || *iter == static_cast<uint8_t>('-')) [[unlikely]] {
 					return set_tag(iter, parse_status::invalid_argument);
 				}
@@ -891,12 +832,23 @@ namespace vn {
 	}
 
 	template<detail::integer_types v_type>
-	VN_FORCE_INLINE std::from_chars_result from_chars(const char* __restrict first, const char* __restrict last, v_type& value, int32_t base = 10) noexcept {
+	VN_INLINE constexpr std::from_chars_result from_chars(const char* __restrict first, const char* __restrict last, v_type& value, int32_t base = 10) noexcept {
 		if (base != 10) [[unlikely]] {
 			return std::from_chars(first, last, value, base);
 		}
-		const uintptr_t raw = std::bit_cast<uintptr_t>(detail::from_chars_impl<v_type>::impl(value, std::bit_cast<const uint8_t*>(first), std::bit_cast<const uint8_t*>(last)));
-		return { detail::strip_tag(raw), detail::parse_status_to_errc[detail::get_tag(raw)] };
+		if consteval {
+			const uint64_t length = static_cast<uint64_t>(last - first);
+			std::array<uint8_t, detail::ce_stride * 3> buffer{};
+			for (uint64_t x = 0; x < length; ++x) {
+				buffer[x] = static_cast<uint8_t>(first[x]);
+			}
+			const uint8_t* result = detail::from_chars_impl<v_type>::impl(value, buffer.data(), buffer.data() + length);
+			const uint64_t offset = static_cast<uint64_t>(result - buffer.data());
+			return { first + offset % detail::ce_stride, detail::parse_status_to_errc[offset / detail::ce_stride] };
+		} else {
+			const uintptr_t raw = std::bit_cast<uintptr_t>(detail::from_chars_impl<v_type>::impl(value, std::bit_cast<const uint8_t*>(first), std::bit_cast<const uint8_t*>(last)));
+			return { detail::strip_tag(raw), detail::parse_status_to_errc[detail::get_tag(raw)] };
+		}
 	}
 
 }

@@ -32,19 +32,19 @@ template<typename X, typename v_type, typename A, typename B> constexpr bool fit
 }
 
 template<typename X, typename v_type, typename xl = std::numeric_limits<X>> constexpr bool fits_in(v_type v, false_type, true_type /* v_type signed*/, true_type /* X signed */) {
-	return xl::lowest() <= v && v <= (xl::max)();
+	return xl::lowest() <= v && v <= ( xl::max )();
 }
 
 template<typename X, typename v_type, typename xl = std::numeric_limits<X>>
 constexpr bool fits_in(v_type v, false_type, true_type /* v_type signed */, false_type /* X unsigned*/) {
-	return 0 <= v && typename std::make_unsigned<v_type>::type(v) <= (xl::max)();
+	return 0 <= v && typename std::make_unsigned<v_type>::type(v) <= ( xl::max )();
 }
 
 template<typename X, typename v_type, typename xl = std::numeric_limits<X>> constexpr bool fits_in(v_type v, false_type, false_type, false_type) {
-	return v <= typename std::make_unsigned<X>::type((xl::max)());
+	return v <= typename std::make_unsigned<X>::type(( xl::max )());
 }
 template<typename X, typename v_type, typename xl = std::numeric_limits<X>> constexpr bool fits_in(v_type v, false_type, false_type, true_type) {
-	return v <= typename std::make_unsigned<X>::type((xl::max)());
+	return v <= typename std::make_unsigned<X>::type(( xl::max )());
 }
 
 template<typename X, typename v_type> constexpr bool fits_in(v_type v) {
@@ -58,8 +58,9 @@ template<typename X> struct to_chars_test_base {
 		constexpr std::size_t len = N - 1;
 		static_assert(len > 0, "expected output won't be empty");
 
-		if (!fits_in<X>(v))
+		if (!fits_in<X>(v)) {
 			return;
+		}
 
 		r = vn::to_chars(buf, buf + len - 1, X(v), static_cast<int32_t>(args)...);
 		assert(r.ptr == buf + len - 1);
@@ -75,8 +76,9 @@ template<typename X> struct to_chars_test_base {
 		std::iota(buf, buf + sizeof(buf), static_cast<char>(1));
 		r = vn::to_chars(buf, buf + sizeof(buf), static_cast<X>(v), static_cast<int32_t>(args)...);
 		assert(r.ec == std::errc{});
-		for (auto i = r.ptr - buf; i < static_cast<decltype(i)>(sizeof(buf)); ++i)
+		for (auto i = r.ptr - buf; i < static_cast<decltype(i)>(sizeof(buf)); ++i) {
 			assert(static_cast<uint8_t>(buf[static_cast<uint64_t>(i)]) == i + 1);
+		}
 		if (r.ptr >= buf && r.ptr < buf + sizeof(buf)) {
 			*r.ptr = '\0';
 		}
