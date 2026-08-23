@@ -1,6 +1,9 @@
-// SPDX-License-Identifier: MIT
-// Copyright (c) 2026 Nihilai Collective Corp
-// vn-incl/i_to_str.hpp
+/*
+ * SPDX-License-Identifier: MIT
+ * Copyright (c) 2026 Nihilai Collective Corp
+ * https://github.com/nihilai-collective/jsonifier
+ * include/vn-incl/i_to_str.hpp
+ */
 
 #pragma once
 
@@ -260,6 +263,29 @@ namespace vn {
 		}
 
 		template<uint64_types v_type> struct to_chars_impl<v_type> {
+#if VN_ARCH_X64
+			VN_FORCE_INLINE static char* impl(char* __restrict buf VN_LIFETIME_BOUND, char* __restrict end, const v_type value) noexcept {
+				return value < 100U
+					? value < 10U ? (end - buf >= 1 ? (static_cast<void>(buf[0] = char(value) + static_cast<char>('0')), buf + 1) : nullptr)
+								  : (end - buf >= 2 ? (static_cast<void>(std::memcpy(buf, char_table_2_digit_data + value, 2ULL)), buf + 2) : nullptr)
+					: value < 100000000ULL
+						? value < 10000ULL
+							? value < 1000U ? (end - buf >= 3 ? (static_cast<void>(copy_3_digits(buf, value)), buf + 3) : nullptr)
+											: (end - buf >= 4 ? (static_cast<void>(std::memcpy(buf, char_table_4_digit_data + value, 4ULL)), buf + 4) : nullptr)
+							: value < 1000000ULL ? value < 100000ULL ? impl_internal<5ULL>(buf, end, value) : impl_internal<6ULL>(buf, end, value)
+							: value < 10000000ULL ? impl_internal<7ULL>(buf, end, value) : impl_internal<8ULL>(buf, end, value)
+						: value < 1000000000000ULL ? value < 10000000000ULL ? value < 1000000000ULL ? impl_internal<9ULL>(buf, end, value) : impl_internal<10ULL>(buf, end, value)
+							: value < 100000000000ULL ? impl_internal<11ULL>(buf, end, value)
+																			 : impl_internal<12ULL>(buf, end, value)
+						: value < 10000000000000000ULL ? value < 100000000000000ULL
+							? value < 10000000000000ULL ? impl_internal<13ULL>(buf, end, value) : impl_internal<14ULL>(buf, end, value)
+							: value < 1000000000000000ULL ? impl_internal<15ULL>(buf, end, value)
+														  : impl_internal<16ULL>(buf, end, value)
+						: value < 1000000000000000000ULL ? value < 100000000000000000ULL ? impl_internal<17ULL>(buf, end, value) : impl_internal<18ULL>(buf, end, value)
+				: value < 10000000000000000000ULL ? impl_internal<19ULL>(buf, end, value)
+												  : impl_internal<20ULL>(buf, end, value);
+			}
+#else
 			VN_FORCE_INLINE static char* impl(char* __restrict buf VN_LIFETIME_BOUND, char* __restrict end, const v_type value) noexcept {
 				return value < 100000000ULL			 ? value < 10000ULL ? value < 100ULL ? value < 10U
 										 ? (end - buf >= 1 ? (static_cast<void>(buf[0] = char(value) + static_cast<char>('0')), buf + 1) : nullptr)
@@ -280,9 +306,24 @@ namespace vn {
 					: value < 10000000000000000000ULL ? impl_internal<19ULL>(buf, end, value)
 													  : impl_internal<20ULL>(buf, end, value);
 			}
+#endif
 		};
 
 		template<uint32_types v_type> struct to_chars_impl<v_type> {
+#if VN_ARCH_X64
+			VN_FORCE_INLINE static char* impl(char* __restrict buf VN_LIFETIME_BOUND, char* __restrict end, const v_type value) noexcept {
+				return value < 100U
+					? value < 10U ? (end - buf >= 1 ? (static_cast<void>(buf[0] = char(value) + static_cast<char>('0')), buf + 1) : nullptr)
+								  : (end - buf >= 2 ? (static_cast<void>(std::memcpy(buf, char_table_2_digit_data + value, 2ULL)), buf + 2) : nullptr)
+					: value < 1000000U
+						? value < 10000U
+							? value < 1000U ? (end - buf >= 3 ? (static_cast<void>(copy_3_digits(buf, value)), buf + 3) : nullptr)
+											: (end - buf >= 4 ? (static_cast<void>(std::memcpy(buf, char_table_4_digit_data + value, 4ULL)), buf + 4) : nullptr)
+							: value < 100000U ? impl_internal<5ULL>(buf, end, value) : impl_internal<6ULL>(buf, end, value)
+						: value < 100000000U ? value < 10000000U ? impl_internal<7ULL>(buf, end, value) : impl_internal<8ULL>(buf, end, value)
+						: value < 1000000000U ? impl_internal<9ULL>(buf, end, value) : impl_internal<10ULL>(buf, end, value);
+			}
+#else
 			VN_FORCE_INLINE static char* impl(char* __restrict buf VN_LIFETIME_BOUND, char* __restrict end, const v_type value) noexcept {
 				return value < 100000U	  ? value < 1000U ? value < 100U
 							   ? value < 10U ? (end - buf >= 1 ? (static_cast<void>(buf[0] = char(value) + static_cast<char>('0')), buf + 1) : nullptr)
@@ -294,9 +335,21 @@ namespace vn {
 					   : value < 1000000000U ? value < 100000000U ? impl_internal<8ULL>(buf, end, value) : impl_internal<9ULL>(buf, end, value)
 											 : impl_internal<10ULL>(buf, end, value);
 			}
+#endif
 		};
 
 		template<uint16_types v_type> struct to_chars_impl<v_type> {
+#if VN_ARCH_X64
+			VN_FORCE_INLINE static char* impl(char* __restrict buf VN_LIFETIME_BOUND, char* __restrict end, const v_type value) noexcept {
+				return value < 10U
+					? (end - buf >= 1 ? (static_cast<void>(buf[0] = char(value) + static_cast<char>('0')), buf + 1) : nullptr)
+					: value < 1000U
+						? value < 100U ? (end - buf >= 2 ? (static_cast<void>(std::memcpy(buf, char_table_2_digit_data + value, 2ULL)), buf + 2) : nullptr)
+									   : (end - buf >= 3 ? (static_cast<void>(copy_3_digits(buf, value)), buf + 3) : nullptr)
+						: value < 10000U ? (end - buf >= 4 ? (static_cast<void>(std::memcpy(buf, char_table_4_digit_data + value, 4ULL)), buf + 4) : nullptr)
+										 : impl_internal<5ULL>(buf, end, value);
+			}
+#else
 			VN_FORCE_INLINE static char* impl(char* __restrict buf VN_LIFETIME_BOUND, char* __restrict end, const v_type value) noexcept {
 				return value < 1000U ? value < 100U ? value < 10U
 							? (end - buf >= 1 ? (static_cast<void>(buf[0] = char(value) + static_cast<char>('0')), buf + 1) : nullptr)
@@ -305,13 +358,14 @@ namespace vn {
 					: value < 10000U ? (end - buf >= 4 ? (static_cast<void>(std::memcpy(buf, char_table_4_digit_data + value, 4ULL)), buf + 4) : nullptr)
 									 : impl_internal<5ULL>(buf, end, value);
 			}
+#endif
 		};
 
-		template<vn::detail::uint8_types v_type> struct to_chars_impl<v_type> {
+		template<uint8_types v_type> struct to_chars_impl<v_type> {
 			VN_FORCE_INLINE static char* impl(char* __restrict buf VN_LIFETIME_BOUND, char* __restrict last, const v_type value) noexcept {
 				const uint32_t t = static_cast<uint8_t>(value);
 				uint32_t packed;
-				std::memcpy(&packed, &vn::detail::char_table_1_byte_data[t], 4ULL);
+				std::memcpy(&packed, &char_table_1_byte_data[t], 4ULL);
 				const uint32_t len{ packed >> 24 };
 				if (static_cast<uint64_t>(last - buf) < static_cast<uint64_t>(len)) {
 					return nullptr;
@@ -328,18 +382,16 @@ namespace vn {
 			}
 		};
 
-		template<vn::detail::int_types v_type>
-		struct to_chars_impl<v_type> {
-			VN_FORCE_INLINE static char* impl_negative(char* __restrict buf VN_LIFETIME_BOUND, char* __restrict end, const v_type value) noexcept {
-				using unsigned_type = std::make_unsigned_t<v_type>;
-				return (end - buf > 0)
-					? (*buf = '-', to_chars_impl<unsigned_type>::impl(buf + 1, end, static_cast<unsigned_type>(static_cast<unsigned_type>(0) - static_cast<unsigned_type>(value))))
-					: nullptr;
-			}
-
-			VN_FORCE_INLINE static char* impl(char* __restrict buf VN_LIFETIME_BOUND, char* __restrict end, const v_type value) noexcept {
-				using unsigned_type = std::make_unsigned_t<v_type>;
-				return (value < 0) ? impl_negative(buf, end, value) : to_chars_impl<unsigned_type>::impl(buf, end, static_cast<unsigned_type>(value));
+		template<int_types v_type> struct to_chars_impl<v_type> {
+			VN_FORCE_INLINE static char* impl(char* __restrict buf VN_LIFETIME_BOUND, char* end, const v_type value) noexcept {
+				using unsigned_type	   = std::make_unsigned_t<v_type>;
+				unsigned_type uval	   = static_cast<unsigned_type>(value);
+				unsigned_type negative = static_cast<unsigned_type>(value < 0);
+				*buf				   = '-';
+				buf += negative;
+				unsigned_type mask = static_cast<unsigned_type>(unsigned_type{ 0 } - negative);
+				unsigned_type t	   = static_cast<unsigned_type>((uval ^ mask) + negative);
+				return to_chars_impl<unsigned_type>::impl(buf, end, t);
 			}
 		};
 	}

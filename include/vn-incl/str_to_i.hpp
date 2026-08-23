@@ -1,6 +1,9 @@
-// SPDX-License-Identifier: MIT
-// Copyright (c) 2026 Nihilai Collective Corp
-// vn-incl/str_to_i.hpp
+/*
+ * SPDX-License-Identifier: MIT
+ * Copyright (c) 2026 Nihilai Collective Corp
+ * https://github.com/nihilai-collective/jsonifier
+ * include/vn-incl/str_to_i.hpp
+ */
 
 #pragma once
 
@@ -461,115 +464,43 @@ namespace vn {
 			}
 		};
 
-		template<uint64_types auto byte_count> struct first_non_zero_byte;
-
-		template<> struct first_non_zero_byte<1ULL> {
-			VN_FORCE_INLINE static uint64_t impl(const uint8_t* __restrict str) noexcept {
-				return *str == '0';
-			}
-		};
-
-		template<> struct first_non_zero_byte<2ULL> {
-			VN_FORCE_INLINE static uint64_t impl(const uint8_t* __restrict str) noexcept {
-				uint16_t chunk;
-				std::memcpy(&chunk, str, 2);
-				uint16_t diff = chunk ^ repeat_bytes_v<static_cast<uint8_t>(0x30), uint16_t>;
-				return static_cast<uint64_t>((diff == 0) ? 2 : count_zeros(diff) >> 3);
-			}
-		};
-
-		template<> struct first_non_zero_byte<3ULL> {
-			VN_FORCE_INLINE static uint64_t impl(const uint8_t* __restrict str) noexcept {
-				uint32_t chunk{};
-				std::memcpy(&chunk, str, 3);
-				uint32_t diff = chunk ^ repeat_bytes_v<static_cast<uint8_t>(0x30), uint32_t>;
-				return (diff == 0) ? 3 : count_zeros(diff) >> 3;
-			}
-		};
-
-		template<> struct first_non_zero_byte<4ULL> {
-			VN_FORCE_INLINE static uint64_t impl(const uint8_t* __restrict str) noexcept {
-				uint32_t chunk;
-				std::memcpy(&chunk, str, 4);
-				uint32_t diff = chunk ^ repeat_bytes_v<static_cast<uint8_t>(0x30), uint32_t>;
-				return (diff == 0) ? 4 : count_zeros(diff) >> 3;
-			}
-		};
-
-		template<> struct first_non_zero_byte<5ULL> {
-			VN_FORCE_INLINE static uint64_t impl(const uint8_t* __restrict str) noexcept {
-				uint64_t chunk{};
-				std::memcpy(&chunk, str, 5);
-				uint64_t diff = chunk ^ repeat_bytes_v<static_cast<uint8_t>(0x30), uint64_t>;
-				return (diff == 0) ? 5 : count_zeros(diff) >> 3;
-			}
-		};
-
-		template<> struct first_non_zero_byte<6ULL> {
-			VN_FORCE_INLINE static uint64_t impl(const uint8_t* __restrict str) noexcept {
-				uint64_t chunk{};
-				std::memcpy(&chunk, str, 6);
-				uint64_t diff = chunk ^ repeat_bytes_v<static_cast<uint8_t>(0x30), uint64_t>;
-				return (diff == 0) ? 6 : count_zeros(diff) >> 3;
-			}
-		};
-
-		template<> struct first_non_zero_byte<7ULL> {
-			VN_FORCE_INLINE static uint64_t impl(const uint8_t* __restrict str) noexcept {
-				uint64_t chunk{};
-				std::memcpy(&chunk, str, 7);
-				uint64_t diff = chunk ^ repeat_bytes_v<static_cast<uint8_t>(0x30), uint64_t>;
-				return (diff == 0) ? 7 : count_zeros(diff) >> 3;
-			}
-		};
-
-		template<> struct first_non_zero_byte<8ULL> {
-			VN_FORCE_INLINE static uint64_t impl(const uint8_t* __restrict str) noexcept {
-				uint64_t chunk;
-				std::memcpy(&chunk, str, 8);
-				uint64_t diff = chunk ^ repeat_bytes_v<static_cast<uint8_t>(0x30), uint64_t>;
-				return (diff == 0) ? 8 : count_zeros(diff) >> 3;
-			}
-		};
-
 		template<uint_types v_type> VN_FORCE_INLINE bool vn_is_digit(v_type value) noexcept {
 			return ((static_cast<uint8_t>(value - '0')) < 10);
 		}
 
 		VN_FORCE_INLINE static const uint8_t* trim_leading_zeros(const uint8_t* __restrict iter VN_LIFETIME_BOUND, const uint8_t* __restrict end) noexcept {
-			switch (static_cast<uint64_t>(end - iter)) {
-				case 1: {
-					return iter + first_non_zero_byte<1ULL>::impl(iter);
-				}
-				case 2: {
-					return iter + first_non_zero_byte<2ULL>::impl(iter);
-				}
-				case 3: {
-					return iter + first_non_zero_byte<3ULL>::impl(iter);
-				}
-				case 4: {
-					return iter + first_non_zero_byte<4ULL>::impl(iter);
-				}
-				case 5: {
-					return iter + first_non_zero_byte<5ULL>::impl(iter);
-				}
-				case 6: {
-					return iter + first_non_zero_byte<6ULL>::impl(iter);
-				}
-				case 7: {
-					return iter + first_non_zero_byte<7ULL>::impl(iter);
-				}
-				case 8: {
-					return iter + first_non_zero_byte<8ULL>::impl(iter);
-				}
-				default: {
-					while (iter + 8 <= end && *iter == '0') {
-						iter += first_non_zero_byte<8ULL>::impl(iter);
+			{
+				static constexpr uint64_t zeros{ repeat_bytes_v<static_cast<uint8_t>('0'), uint64_t> };
+				while (end - iter >= 8) {
+					const uint64_t chunk{ load<uint64_t>(iter) ^ zeros };
+					if (chunk) {
+						return iter + (count_zeros(chunk) >> 3);
 					}
-					while (iter < end && *iter == '0') {
-						++iter;
-					}
+					iter += 8;
 				}
+			}
+			{
+				static constexpr uint32_t zeros{ repeat_bytes_v<static_cast<uint8_t>('0'), uint32_t> };
+				if (end - iter >= 4) {
+					const uint32_t chunk{ load<uint32_t>(iter) ^ zeros };
+					if (chunk) {
+						return iter + (count_zeros(chunk) >> 3);
+					}
+					iter += 4;
+				}
+			}
+			{
+				static constexpr uint16_t zeros{ repeat_bytes_v<static_cast<uint8_t>('0'), uint16_t> };
+				if (end - iter >= 2) {
+					const uint16_t chunk{ static_cast<uint16_t>(load<uint16_t>(iter) ^ zeros) };
+					if (chunk) {
+						return iter + (count_zeros(chunk) >> 3);
+					}
+					iter += 2;
+				}
+			}
+			if (iter < end && *iter == '0') {
+				++iter;
 			}
 			return iter;
 		}

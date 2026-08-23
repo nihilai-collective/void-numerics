@@ -1,6 +1,9 @@
-// SPDX-License-Identifier: MIT
-// Copyright (c) 2026 Nihilai Collective Corp
-// vn-incl/utility.hpp
+/*
+ * SPDX-License-Identifier: MIT
+ * Copyright (c) 2026 Nihilai Collective Corp
+ * https://github.com/nihilai-collective/jsonifier
+ * include/vn-incl/utility.hpp
+ */
 
 #pragma once
 
