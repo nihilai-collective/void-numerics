@@ -1,6 +1,6 @@
-# MIT License
-# Copyright (c) 2026 Nihilai Collective Corp#
-# (license text unchanged)
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Nihilai Collective Corp
+# https://github.com/nihilai-collective/void-numerics
 # cmake/installation_setup.cmake
 
 set(CONFIG_FILE_NAME ${PROJECT_NAME}Config.cmake)

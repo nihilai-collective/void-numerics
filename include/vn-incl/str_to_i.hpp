@@ -27,20 +27,20 @@ namespace vn {
 			invalid_argument,
 		};
 
-		static constexpr std::errc parse_status_to_errc[] = {
+		inline constexpr std::errc parse_status_to_errc[] = {
 			std::errc{},
 			std::errc::result_out_of_range,
 			std::errc::invalid_argument,
 			std::errc{},
 		};
 
-		static constexpr uint32_t tag_shift	 = 62u;
-		static constexpr uintptr_t tag_mask	 = uintptr_t{ 0x3 } << tag_shift;
-		static constexpr uintptr_t addr_mask = ~tag_mask;
+		inline constexpr uint32_t tag_shift	 = 62u;
+		inline constexpr uintptr_t tag_mask	 = uintptr_t{ 0x3 } << tag_shift;
+		inline constexpr uintptr_t addr_mask = ~tag_mask;
 
 		static_assert(sizeof(uintptr_t) == 8, "pointer tagging requires 64-bit pointers");
 
-		static constexpr uint64_t ce_stride = 256;
+		inline constexpr uint64_t ce_stride = 256;
 
 		VN_INLINE constexpr const uint8_t* set_tag(const uint8_t* ptr VN_LIFETIME_BOUND, parse_status status) noexcept {
 			if consteval {
@@ -64,17 +64,17 @@ namespace vn {
 			uint64_t digits;
 		};
 
-		template<uint_types v_type> VN_INLINE static constexpr v_type load(const uint8_t* __restrict str) noexcept {
+		template<uint_types v_type> VN_INLINE constexpr v_type load(const uint8_t* __restrict str) noexcept {
 			v_type chunk;
 			pow2_memcpy_wrapper<sizeof(v_type)>(&chunk, str);
 			return chunk;
 		}
 
-		template<uint8_types v_type> VN_INLINE static constexpr v_type load(const uint8_t* __restrict str) noexcept {
+		template<uint8_types v_type> VN_INLINE constexpr v_type load(const uint8_t* __restrict str) noexcept {
 			return *str;
 		}
 
-		template<uint_types v_type> VN_INLINE static constexpr v_type mask(v_type raw) noexcept {
+		template<uint_types v_type> VN_INLINE constexpr v_type mask(v_type raw) noexcept {
 			static constexpr v_type high{ repeat_bytes_v<static_cast<uint8_t>(0x80), v_type> };
 			static constexpr v_type low{ repeat_bytes_v<static_cast<uint8_t>(0x7F), v_type> };
 			static constexpr v_type up{ repeat_bytes_v<static_cast<uint8_t>(0x46), v_type> };
@@ -85,7 +85,7 @@ namespace vn {
 			return static_cast<v_type>((raw & high) | above | (~at_least & high));
 		}
 
-		VN_INLINE static constexpr bool incorrect(uint8_t raw) noexcept {
+		VN_INLINE constexpr bool incorrect(uint8_t raw) noexcept {
 			return static_cast<uint8_t>(raw - static_cast<uint8_t>(0x30)) > 9u;
 		}
 
@@ -476,7 +476,7 @@ namespace vn {
 			return ((static_cast<uint8_t>(value - '0')) < 10);
 		}
 
-		VN_INLINE static constexpr const uint8_t* trim_leading_zeros(const uint8_t* __restrict iter VN_LIFETIME_BOUND, const uint8_t* __restrict end) noexcept {
+		VN_INLINE constexpr const uint8_t* trim_leading_zeros(const uint8_t* __restrict iter VN_LIFETIME_BOUND, const uint8_t* __restrict end) noexcept {
 			{
 				static constexpr uint64_t zeros{ repeat_bytes_v<static_cast<uint8_t>('0'), uint64_t> };
 				while (end - iter >= 8) {
@@ -516,7 +516,7 @@ namespace vn {
 		template<typename v_type> struct from_chars_impl;
 
 		template<bool negative, integer_types v_type, integer_types v_type_local>
-		VN_INLINE constexpr const uint8_t* finish(const uint8_t* it VN_LIFETIME_BOUND, v_type& value_new, v_type_local value) {
+		VN_INLINE constexpr const uint8_t* finish(const uint8_t* it VN_LIFETIME_BOUND, v_type& value_new, v_type_local value) noexcept {
 			static constexpr v_type_local zero_val{ 0 };
 			if constexpr (negative) {
 				value_new = static_cast<v_type>(zero_val - value);
@@ -528,7 +528,7 @@ namespace vn {
 
 		template<bool negative, typename v_type>
 			requires(integral16_types<v_type> || integral8_types<v_type>)
-		VN_INLINE static constexpr const uint8_t* parse_integer(v_type& value_new, const uint8_t* __restrict iter VN_LIFETIME_BOUND, const uint8_t* __restrict end) noexcept {
+		VN_INLINE constexpr const uint8_t* parse_integer(v_type& value_new, const uint8_t* __restrict iter VN_LIFETIME_BOUND, const uint8_t* __restrict end) noexcept {
 			using v_type_local = std::make_unsigned_t<v_type>;
 
 			if (iter >= end) [[unlikely]] {
@@ -724,14 +724,14 @@ namespace vn {
 			}
 		};
 
-		template<bool negative, integer_types v_type> VN_INLINE static constexpr bool exceeds_limit(v_type value, uint8_t last) noexcept {
+		template<bool negative, integer_types v_type> VN_INLINE constexpr bool exceeds_limit(v_type value, uint8_t last) noexcept {
 			return static_cast<uint64_t>(value) > static_cast<uint64_t>(comp_vals<v_type, negative>[last]);
 		}
 
 		template<typename v_type> struct from_chars_impl;
 
 		template<bool negative, integer_types v_type>
-		VN_INLINE static constexpr const uint8_t* parse_integer(v_type& value_new, const uint8_t* __restrict iter VN_LIFETIME_BOUND, const uint8_t* __restrict end) noexcept {
+		VN_INLINE constexpr const uint8_t* parse_integer(v_type& value_new, const uint8_t* __restrict iter VN_LIFETIME_BOUND, const uint8_t* __restrict end) noexcept {
 			using v_type_local = std::make_unsigned_t<v_type>;
 
 			if (iter >= end) [[unlikely]] {

@@ -7,6 +7,8 @@
 
 #pragma once
 
+#include <vn-incl/defines.hpp>
+#include <type_traits>
 #include <concepts>
 #include <charconv>
 #include <cstring>

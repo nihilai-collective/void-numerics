@@ -1,5 +1,9 @@
-﻿// SPDX-License-Identifier: MIT
-// Copyright (c) 2026 Nihilai Collective Corp
+/*
+ * SPDX-License-Identifier: MIT
+ * Copyright (c) 2026 Nihilai Collective Corp
+ * https://github.com/nihilai-collective/void-numerics
+ * unit-tests/main.cpp
+ */
 
 #include "i_to_str.hpp"
 #include "str_to_i.hpp"
@@ -7,13 +11,13 @@
 #include "llvm_roundtrip.hpp"
 #include "llvm_integral_pass.hpp"
 
-template<rt_ut::string_literal values> [[maybe_unused]] static constexpr uint64_t value_new{ []() -> uint64_t {
+template<rt_ut::string_literal values> [[maybe_unused]] inline constexpr uint64_t value_new{ []() consteval -> uint64_t {
 	uint64_t return_value{};
 	vn::from_chars(values.data(), values.data() + values.size(), return_value);
 	return return_value;
 }() };
 
-template<uint64_t value> static constexpr std::array<char, 21> newer_string{ []() -> std::array<char, 21> {
+template<uint64_t value> inline constexpr std::array<char, 21> newer_string{ []() consteval -> std::array<char, 21> {
 	std::array<char, 21> return_value{};
 	vn::to_chars(return_value.data(), return_value.data() + 20, value);
 	return return_value;
