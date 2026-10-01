@@ -13,11 +13,6 @@ namespace vn {
 
 	namespace detail {
 
-		static constexpr const auto* __restrict char_table_1_byte_data	= int_tables<1>::values;
-		static constexpr const auto* __restrict char_table_2_digit_data = int_tables<2>::values;
-		static constexpr const auto* __restrict char_table_3_digit_data = int_tables<3>::values;
-		static constexpr const auto* __restrict char_table_4_digit_data = int_tables<4>::values;
-
 		template<typename v_type, uint64_t digit_length> struct to_chars_internal;
 
 		template<typename v_type> struct to_chars_impl;
@@ -40,7 +35,7 @@ namespace vn {
 			}
 		};
 
-		template<uint_types v_type> VN_INLINE static constexpr void copy_3_digits(char* __restrict buf, const v_type value) noexcept {
+		template<uint_types v_type> VN_INLINE constexpr void copy_3_digits(char* __restrict buf, const v_type value) noexcept {
 			uint32_t packed;
 			pow2_memcpy_wrapper<4ULL>(&packed, &char_table_3_digit_data[value]);
 			pow2_memcpy_wrapper<2ULL>(buf, &packed);
@@ -258,7 +253,7 @@ namespace vn {
 		};
 
 		template<uint64_types auto size, uint_types v_type>
-		VN_INLINE static constexpr char* impl_internal(char* __restrict buf VN_LIFETIME_BOUND, char* __restrict end, const v_type value) noexcept {
+		VN_INLINE constexpr char* impl_internal(char* __restrict buf VN_LIFETIME_BOUND, char* __restrict end, const v_type value) noexcept {
 			return (static_cast<uint64_t>(end - buf) >= size ? to_chars_internal<v_type, size>::impl(buf, value) : nullptr);
 		}
 
@@ -360,22 +355,21 @@ namespace vn {
 
 		template<uint8_types v_type> struct to_chars_impl<v_type> {
 			VN_INLINE static constexpr char* impl(char* __restrict buf VN_LIFETIME_BOUND, char* __restrict last, const v_type value) noexcept {
-				const uint32_t t = static_cast<uint8_t>(value);
-				uint32_t packed;
-				pow2_memcpy_wrapper<4ULL>(&packed, &char_table_1_byte_data[t]);
-				const uint32_t len{ packed >> 24 };
-				if (static_cast<uint64_t>(last - buf) < static_cast<uint64_t>(len)) {
+				const uint32_t v		 = static_cast<uint8_t>(value);
+				const uint64_t remaining = static_cast<uint64_t>(last - buf);
+				if (v < 10u) {
+					return remaining >= 1u ? (static_cast<void>(buf[0] = static_cast<char>(v + '0')), buf + 1) : nullptr;
+				}
+				if (v < 100u) {
+					return remaining >= 2u ? (static_cast<void>(pow2_memcpy_wrapper<2ULL>(buf, char_table_2_digit_data + v)), buf + 2) : nullptr;
+				}
+				if (remaining < 3u) {
 					return nullptr;
 				}
-				if (len == 3u) {
-					pow2_memcpy_wrapper<2ULL>(buf, &packed);
-					buf[2] = static_cast<char>(packed >> 16);
-				} else if (len == 2u) {
-					pow2_memcpy_wrapper<2ULL>(buf, &packed);
-				} else {
-					buf[0] = static_cast<char>(packed);
-				}
-				return buf + len;
+				const uint32_t hundreds = (v * 41u) >> 12;
+				buf[0]					= static_cast<char>('0' + hundreds);
+				pow2_memcpy_wrapper<2ULL>(buf + 1, char_table_2_digit_data + (v - hundreds * 100u));
+				return buf + 3;
 			}
 		};
 

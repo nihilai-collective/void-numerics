@@ -316,7 +316,7 @@ namespace test_macros_detail {
 // that the compiler doesn't elide the call to new/delete. Otherwise, elliding
 // calls to new/delete is allowed by the Standard and compilers actually do it
 // when optimizations are enabled.
-template<class Tp> inline Tp const& DoNotOptimize(Tp const& value) {
+template<class Tp> inline Tp const& DoNotOptimize(Tp const& value) noexcept {
 		// The `m` constraint is invalid in the AMDGPU backend.
 	#if defined(__AMDGPU__) || defined(__NVPTX__)
 	asm volatile("" : : "r"(value) : "memory");
@@ -326,7 +326,7 @@ template<class Tp> inline Tp const& DoNotOptimize(Tp const& value) {
 	return value;
 }
 
-template<class Tp> inline Tp& DoNotOptimize(Tp& value) {
+template<class Tp> inline Tp& DoNotOptimize(Tp& value) noexcept {
 		// The `m` and `r` output constraint is invalid in the AMDGPU backend as well
 		// as i8 / i1 arguments, so we just capture the pointer instead.
 	#if defined(__AMDGPU__)
@@ -341,7 +341,7 @@ template<class Tp> inline Tp& DoNotOptimize(Tp& value) {
 }
 #else
 	#include <intrin.h>
-template<class Tp> inline Tp const& DoNotOptimize(Tp const& value) {
+template<class Tp> inline Tp const& DoNotOptimize(Tp const& value) noexcept {
 	const volatile void* volatile unused = __builtin_addressof(value);
 	static_cast<void>(unused);
 	_ReadWriteBarrier();

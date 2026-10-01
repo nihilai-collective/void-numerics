@@ -13,7 +13,7 @@ namespace vn {
 
 	namespace detail {
 
-		template<integer_types v_type> static constexpr uint64_t max_digits_v{ []<integer_types v_type_local> {
+		template<integer_types v_type> inline constexpr uint64_t max_digits_v{ []<integer_types v_type_local>() consteval {
 			if constexpr (integral8_types<v_type_local>) {
 				return 3ULL;
 			} else if constexpr (integral16_types<v_type_local>) {
@@ -29,7 +29,7 @@ namespace vn {
 			}
 		}.template operator()<v_type>() };
 
-		template<integer_types v_type> using next_higher_int_t = decltype([]<integer_types v_type_local> {
+		template<integer_types v_type> using next_higher_int_t = decltype([]<integer_types v_type_local>() consteval {
 			if constexpr (uint8_types<v_type_local>) {
 				return uint16_t{};
 			} else if constexpr (uint16_types<v_type_local>) {
@@ -47,9 +47,9 @@ namespace vn {
 			}
 		}.template operator()<v_type>());
 
-		template<uint8_types auto repeat, uint_types v_type> static constexpr uint64_t repeat_bytes_v = static_cast<v_type>(0x0101010101010101ull) * static_cast<v_type>(repeat);
+		template<uint8_types auto repeat, uint_types v_type> inline constexpr uint64_t repeat_bytes_v = static_cast<v_type>(0x0101010101010101ull) * static_cast<v_type>(repeat);
 
-		template<bool negative> static constexpr uint64_t comp_val_addition{ [] {
+		template<bool negative> inline constexpr uint64_t comp_val_addition{ []() consteval {
 			if constexpr (negative) {
 				return 1ULL;
 			} else {
@@ -57,7 +57,7 @@ namespace vn {
 			}
 		}() };
 
-		template<typename v_type, bool negative> static constexpr std::array<std::make_unsigned_t<v_type>, 256> gen_raw_comp_vals() {
+		template<typename v_type, bool negative> consteval std::array<std::make_unsigned_t<v_type>, 256> gen_raw_comp_vals() {
 			constexpr auto max_value{ static_cast<std::make_unsigned_t<v_type>>(std::numeric_limits<base_t<v_type>>::max()) + comp_val_addition<negative> };
 			std::array<std::make_unsigned_t<v_type>, 256> return_values_interna{};
 			return_values_interna['0'] = (max_value - 0) / 10;
@@ -73,103 +73,48 @@ namespace vn {
 			return return_values_interna;
 		};
 
-		template<typename v_type, bool negative> alignas(64) static constexpr std::array<std::make_unsigned_t<v_type>, 256> raw_comp_vals{ gen_raw_comp_vals<v_type, negative>() };
+		template<typename v_type, bool negative> alignas(64) inline constexpr std::array<std::make_unsigned_t<v_type>, 256> raw_comp_vals{ gen_raw_comp_vals<v_type, negative>() };
 
-		template<typename v_type, bool negative> alignas(64) static constexpr const std::make_unsigned_t<v_type>* __restrict comp_vals{ raw_comp_vals<v_type, negative>.data() };
+		template<typename v_type, bool negative> alignas(64) inline constexpr const std::make_unsigned_t<v_type>* __restrict comp_vals{ raw_comp_vals<v_type, negative>.data() };
 
-		template<uint8_types v_type> VN_INLINE static constexpr bool is_digit(v_type c) noexcept {
+		template<uint8_types v_type> VN_INLINE constexpr bool is_digit(v_type c) noexcept {
 			return c - static_cast<uint8_t>('0') < 10;
 		}
 
-		template<std::endian, uint64_t size = 0> struct int_tables_impl;
+		template<uint64_t count> consteval uint64_t gen_table_size() {
+			uint64_t result = 1;
+			for (uint64_t j = 0; j < count; ++j) {
+				result *= 10;
+			}
+			return result;
+		}
 
-		template<std::endian endianness> static constexpr std::array<uint32_t, 256> gen_1() {
-			std::array<uint32_t, 256> t{};
-			for (uint32_t i = 0; i < 256; ++i) {
-				const uint32_t d0	 = static_cast<uint8_t>('0') + (i / 100);
-				const uint32_t d1	 = static_cast<uint8_t>('0') + (i / 10 % 10);
-				const uint32_t d2	 = static_cast<uint8_t>('0') + (i % 10);
-				const uint32_t len	 = i > 99u ? 3u : i > 9u ? 2u : 1u;
-				const uint32_t shift = 8u * (3u - len);
-				if constexpr (endianness == std::endian::little) {
-					t[i] = ((d0 | (d1 << 8) | (d2 << 16)) >> shift) | (len << 24);
-				} else {
-					t[i] = ((d0 << 24) | (d1 << 16) | (d2 << 8)) << shift;
+		template<uint64_t count> using gen_table_value_t = std::conditional_t<(count <= 2ULL), uint16_t, uint32_t>;
+
+		template<uint64_t count> consteval std::array<gen_table_value_t<count>, gen_table_size<count>()> gen_table() {
+			using value_type		= gen_table_value_t<count>;
+			constexpr uint64_t size = gen_table_size<count>();
+			std::array<value_type, size> t{};
+			for (uint64_t i = 0; i < size; ++i) {
+				uint64_t divisor = size / 10;
+				for (uint64_t j = 0; j < count; ++j) {
+					const auto digit	 = static_cast<value_type>(static_cast<uint8_t>('0') + (i / divisor % 10));
+					const uint64_t shift = (std::endian::native == std::endian::little ? j : sizeof(value_type) - 1 - j) * 8;
+					t[i] |= static_cast<value_type>(digit << shift);
+					divisor /= 10;
 				}
 			}
 			return t;
 		}
 
-		template<std::endian endianness> static constexpr std::array<uint16_t, 100> gen_2() {
-			std::array<uint16_t, 100> t{};
-			for (uint32_t i = 0; i < 100; ++i) {
-				if constexpr (endianness == std::endian::little) {
-					t[i] |= static_cast<uint16_t>(static_cast<uint8_t>('0') + (i / 10));
-					t[i] |= static_cast<uint16_t>(static_cast<uint8_t>('0') + (i % 10)) << 8;
-				} else {
-					t[i] |= static_cast<uint16_t>(static_cast<uint8_t>('0') + (i / 10)) << 8;
-					t[i] |= static_cast<uint16_t>(static_cast<uint8_t>('0') + (i % 10));
-				}
-			}
-			return t;
-		}
+		alignas(64) inline constexpr auto table_02{ gen_table<2ULL>() };
+		alignas(64) inline constexpr const auto* __restrict char_table_2_digit_data = table_02.data();
+		alignas(64) inline constexpr auto table_03{ gen_table<3ULL>() };
+		alignas(64) inline constexpr const auto* __restrict char_table_3_digit_data = table_03.data();
+		alignas(64) inline constexpr auto table_04{ gen_table<4ULL>() };
+		alignas(64) inline constexpr const auto* __restrict char_table_4_digit_data = table_04.data();
 
-		template<std::endian endianness> static constexpr std::array<uint32_t, 1000> gen_3() {
-			std::array<uint32_t, 1000> t{};
-			for (uint32_t i = 0; i < 1000; ++i) {
-				const uint32_t d0 = static_cast<uint8_t>('0') + (i / 100);
-				const uint32_t d1 = static_cast<uint8_t>('0') + (i / 10 % 10);
-				const uint32_t d2 = static_cast<uint8_t>('0') + (i % 10);
-				if constexpr (endianness == std::endian::little) {
-					t[i] = d0 | (d1 << 8) | (d2 << 16);
-				} else {
-					t[i] = (d0 << 24) | (d1 << 16) | (d2 << 8);
-				}
-			}
-			return t;
-		}
-
-		template<std::endian endianness> static constexpr std::array<uint32_t, 10000> gen_4() {
-			std::array<uint32_t, 10000> t{};
-			for (uint32_t i = 0; i < 10000; ++i) {
-				if constexpr (endianness == std::endian::little) {
-					t[i] |= static_cast<uint32_t>(static_cast<uint8_t>('0') + (i / 1000));
-					t[i] |= static_cast<uint32_t>(static_cast<uint8_t>('0') + (i / 100 % 10)) << 8;
-					t[i] |= static_cast<uint32_t>(static_cast<uint8_t>('0') + (i / 10 % 10)) << 16;
-					t[i] |= static_cast<uint32_t>(static_cast<uint8_t>('0') + (i % 10)) << 24;
-				} else {
-					t[i] |= static_cast<uint32_t>(static_cast<uint8_t>('0') + (i / 1000)) << 24;
-					t[i] |= static_cast<uint32_t>(static_cast<uint8_t>('0') + (i / 100 % 10)) << 16;
-					t[i] |= static_cast<uint32_t>(static_cast<uint8_t>('0') + (i / 10 % 10)) << 8;
-					t[i] |= static_cast<uint32_t>(static_cast<uint8_t>('0') + (i % 10));
-				}
-			}
-			return t;
-		}
-
-		template<std::endian endianness> struct int_tables_impl<endianness, 1> {
-			alignas(64) static constexpr std::array<uint32_t, 256> table{ gen_1<endianness>() };
-			alignas(64) static constexpr const uint32_t* __restrict values{ table.data() };
-		};
-
-		template<std::endian endianness> struct int_tables_impl<endianness, 2> {
-			alignas(64) static constexpr std::array<uint16_t, 100> table{ gen_2<endianness>() };
-			alignas(64) static constexpr const uint16_t* __restrict values{ table.data() };
-		};
-
-		template<std::endian endianness> struct int_tables_impl<endianness, 3> {
-			alignas(64) static constexpr std::array<uint32_t, 1000> table{ gen_3<endianness>() };
-			alignas(64) static constexpr const uint32_t* __restrict values{ table.data() };
-		};
-
-		template<std::endian endianness> struct int_tables_impl<endianness, 4> {
-			alignas(64) static constexpr std::array<uint32_t, 10000> table{ gen_4<endianness>() };
-			alignas(64) static constexpr const uint32_t* __restrict values{ table.data() };
-		};
-
-		template<uint64_t size> using int_tables = int_tables_impl<std::endian::native, size>;
-
-		template<uint_types v_type> VN_INLINE static constexpr v_type mulhi_portable(v_type a, v_type b) noexcept {
+		template<uint_types v_type> VN_INLINE constexpr v_type mulhi_portable(v_type a, v_type b) noexcept {
 			static constexpr uint64_t half_bits = sizeof(v_type) * 4;
 			static constexpr v_type mask		= (static_cast<v_type>(1) << half_bits) - 1;
 			const v_type a_lo					= a & mask;
