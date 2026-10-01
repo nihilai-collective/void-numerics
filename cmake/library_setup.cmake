@@ -1,6 +1,6 @@
-# MIT License
-# Copyright (c) 2026 Nihilai Collective Corp#
-# (license text unchanged)
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Nihilai Collective Corp
+# https://github.com/nihilai-collective/void-numerics
 # cmake/library_setup.cmake
 
 add_library(${PROJECT_NAME} INTERFACE)
@@ -9,9 +9,6 @@ add_library(${PROJECT_NAME}::${PROJECT_NAME} ALIAS ${PROJECT_NAME})
 set(VN_COMPILE_DEFINITIONS
     VN_ARCH_X64=$<IF:$<OR:$<STREQUAL:${CMAKE_SYSTEM_PROCESSOR},x86_64>,$<STREQUAL:${CMAKE_SYSTEM_PROCESSOR},AMD64>>,1,0>
     VN_ARCH_ARM64=$<IF:$<OR:$<STREQUAL:${CMAKE_SYSTEM_PROCESSOR},aarch64>,$<STREQUAL:${CMAKE_SYSTEM_PROCESSOR},ARM64>,$<STREQUAL:${CMAKE_SYSTEM_PROCESSOR},arm64>>,1,0>
-    VN_PLATFORM_WINDOWS=$<IF:$<PLATFORM_ID:Windows>,1,0>
-    VN_PLATFORM_LINUX=$<IF:$<PLATFORM_ID:Linux>,1,0>
-    VN_PLATFORM_MAC=$<IF:$<PLATFORM_ID:Darwin>,1,0>
     VN_COMPILER_CLANG=$<IF:$<OR:$<CXX_COMPILER_ID:Clang>,$<CXX_COMPILER_ID:AppleClang>>,1,0>
     VN_COMPILER_MSVC=$<IF:$<CXX_COMPILER_ID:MSVC>,1,0>
     VN_COMPILER_GCC=$<IF:$<CXX_COMPILER_ID:GNU>,1,0>

@@ -19,35 +19,36 @@
 using std::false_type;
 using std::true_type;
 
-template<typename To, typename From> constexpr auto is_non_narrowing(From a) -> decltype(To{ a }, true_type()) {
+template<typename To, typename From> constexpr auto is_non_narrowing(From a) noexcept -> decltype(To{ a }, true_type()) {
 	return {};
 }
 
-template<typename To> constexpr auto is_non_narrowing(...) -> false_type {
+template<typename To> constexpr auto is_non_narrowing(...) noexcept -> false_type {
 	return {};
 }
 
-template<typename X, typename v_type, typename A, typename B> constexpr bool fits_in(v_type, true_type, A, B) {
+template<typename X, typename v_type, typename A, typename B> constexpr bool fits_in(v_type, true_type, A, B) noexcept {
 	return true;
 }
 
-template<typename X, typename v_type, typename xl = std::numeric_limits<X>> constexpr bool fits_in(v_type v, false_type, true_type /* v_type signed*/, true_type /* X signed */) {
+template<typename X, typename v_type, typename xl = std::numeric_limits<X>>
+constexpr bool fits_in(v_type v, false_type, true_type /* v_type signed*/, true_type /* X signed */) noexcept {
 	return xl::lowest() <= v && v <= ( xl::max )();
 }
 
 template<typename X, typename v_type, typename xl = std::numeric_limits<X>>
-constexpr bool fits_in(v_type v, false_type, true_type /* v_type signed */, false_type /* X unsigned*/) {
+constexpr bool fits_in(v_type v, false_type, true_type /* v_type signed */, false_type /* X unsigned*/) noexcept {
 	return 0 <= v && typename std::make_unsigned<v_type>::type(v) <= ( xl::max )();
 }
 
-template<typename X, typename v_type, typename xl = std::numeric_limits<X>> constexpr bool fits_in(v_type v, false_type, false_type, false_type) {
+template<typename X, typename v_type, typename xl = std::numeric_limits<X>> constexpr bool fits_in(v_type v, false_type, false_type, false_type) noexcept {
 	return v <= typename std::make_unsigned<X>::type(( xl::max )());
 }
-template<typename X, typename v_type, typename xl = std::numeric_limits<X>> constexpr bool fits_in(v_type v, false_type, false_type, true_type) {
+template<typename X, typename v_type, typename xl = std::numeric_limits<X>> constexpr bool fits_in(v_type v, false_type, false_type, true_type) noexcept {
 	return v <= typename std::make_unsigned<X>::type(( xl::max )());
 }
 
-template<typename X, typename v_type> constexpr bool fits_in(v_type v) {
+template<typename X, typename v_type> constexpr bool fits_in(v_type v) noexcept {
 	return fits_in<X>(v, is_non_narrowing<X>(v), std::is_signed<v_type>{}, std::is_signed<X>{});
 }
 
@@ -163,14 +164,14 @@ template<typename... Xs, typename... Ys> struct type_concat<type_list<Xs...>, ty
 
 template<typename L1, typename L2> using concat_t = typename type_concat<L1, L2>::type;
 
-template<typename L1, typename L2> constexpr auto concat(L1, L2) -> concat_t<L1, L2> {
+template<typename L1, typename L2> consteval auto concat(L1, L2) -> concat_t<L1, L2> {
 	return {};
 }
 
-static constexpr auto all_floats   = type_list<float, double>();
-static constexpr auto all_signed   = type_list<char, signed char, short, int32_t, long, long long>();
-static constexpr auto all_unsigned = type_list<uint8_t, unsigned short, uint32_t, uint64_t, uint64_t>();
-static constexpr auto integrals	   = concat(all_unsigned, all_signed);
+inline constexpr auto all_floats   = type_list<float, double>();
+inline constexpr auto all_signed   = type_list<char, signed char, short, int32_t, long, long long>();
+inline constexpr auto all_unsigned = type_list<uint8_t, unsigned short, uint32_t, uint64_t, uint64_t>();
+inline constexpr auto integrals	   = concat(all_unsigned, all_signed);
 
 template<template<typename> class Fn, typename... Ts> TEST_CONSTEXPR_CXX23 void run(type_list<Ts...>) {
 	int32_t ls[sizeof...(Ts)] = { (Fn<Ts>{}(), 0)... };
