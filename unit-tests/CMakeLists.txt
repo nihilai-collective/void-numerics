@@ -1,6 +1,6 @@
-﻿# MIT License
-# Copyright (c) 2026 Nihilai Collective Corp#
-# (license text unchanged)
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Nihilai Collective Corp
+# https://github.com/nihilai-collective/void-numerics
 # unit-tests/CMakeLists.txt
 
 add_executable(vn-unit-tests main.cpp)

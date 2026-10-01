@@ -1,6 +1,6 @@
-﻿# MIT License
-# Copyright (c) 2026 Nihilai Collective Corp#
-# (license text unchanged)
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Nihilai Collective Corp
+# https://github.com/nihilai-collective/void-numerics
 # CMakeLists.txt
 cmake_minimum_required(VERSION 3.28)
 

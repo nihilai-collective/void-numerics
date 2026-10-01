@@ -1,5 +1,9 @@
-﻿// SPDX-License-Identifier: MIT
-// Copyright (c) 2026 Nihilai Collective Corp
+/*
+ * SPDX-License-Identifier: MIT
+ * Copyright (c) 2026 Nihilai Collective Corp
+ * https://github.com/nihilai-collective/void-numerics
+ * unit-tests/main.cpp
+ */
 
 #include "i_to_str.hpp"
 #include "str_to_i.hpp"

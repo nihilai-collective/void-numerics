@@ -12,7 +12,7 @@
 
 The C++ standard library's `<charconv>` is already fast. `void-numerics` is faster - substantially so on hot integer-conversion paths - without sacrificing correctness, portability, or API compatibility.
 
-Every conversion is exhaustively unit-tested against `std::to_chars` / `std::from_chars` (including the LLVM libc++ test suite) and benchmarked against `std`, `jeaiii`, `fmt`, and `strtoll`/`strtoull` across 8-, 16-, 32-, and 64-bit signed and uint32_t integer types.
+Every conversion is exhaustively unit-tested against `std::to_chars` / `std::from_chars` (including the LLVM libc++ test suite) and benchmarked against `std`, `jeaiii`, `fmt`, and `strtoll`/`strtoull` across 8-, 16-, 32-, and 64-bit signed and unsigned integer types.
 
 ---
 
@@ -36,11 +36,13 @@ Every conversion is exhaustively unit-tested against `std::to_chars` / `std::fro
 
 - **API-compatible** with `std::to_chars` / `std::from_chars` - returns `std::to_chars_result` / `std::from_chars_result`
 - **All integer types**: `int8_t`, `uint8_t`, `int16_t`, `uint16_t`, `int32_t`, `uint32_t`, `int64_t`, `uint64_t`
-- **Header-only** - single include, no build step required to consume
+- **Header-only** - single `#include <void-numerics>`, no build step required to consume
+- **`constexpr`** - base-10 `vn::to_chars` and `vn::from_chars` can be evaluated at compile time
 - **Zero allocation, zero exceptions, zero RTTI**
 - **C++23** - leverages concepts for type-correct dispatch
 - **Compile-time tables** for digit conversion and overflow bounds
 - **Multiply-and-shift division replacement** for hot paths
+- **Fixed-length SWAR parsing** - `vn::from_chars` dispatches to a parser sized to the digit count, validating and folding 8/4/2/1-byte chunks
 - **Force-inlined helpers** with manual ladder dispatch sized to digit count
 - **Cross-platform CI**: Linux Clang-20, Linux GCC-14, macOS Clang, macOS GCC-15, Windows MSVC
 - **AddressSanitizer / UndefinedBehaviorSanitizer** support out of the box
@@ -49,7 +51,7 @@ Every conversion is exhaustively unit-tested against `std::to_chars` / `std::fro
 
 ## Quick Start
 
-Warning: Include only <void-numerics>. Direct inclusion of internal headers may cause unrelated code in the including translation unit to become uncompilable.
+**Warning:** Include only `<void-numerics>`. Direct inclusion of internal headers may cause unrelated code in the including translation unit to become uncompilable.
 
 ### Integer → string
 
@@ -115,13 +117,15 @@ template<integer_types v_type>
 std::from_chars_result from_chars(const char* first, const char* last, v_type& value, int32_t base = 10) noexcept;
 ```
 
-Parses an integer from `[first, last)` into `value`. Returns `{ptr, std::errc{}}` on success, where `ptr` points to the first character not consumed. Returns `{first, std::errc::invalid_argument}` if no characters could be parsed.
+Parses an integer from `[first, last)` into `value`. Returns `{ptr, std::errc{}}` on success, where `ptr` points to the first character not consumed. Returns `{first, std::errc::invalid_argument}` if no characters could be parsed (empty input, a lone `-`, or `-` on an unsigned type). Returns `{ptr, std::errc::result_out_of_range}` if the value does not fit in `v_type`, where `ptr` points past the full run of digits and `value` is left unmodified.
+
+`bool` is not accepted as an integer type.
 
 ---
 
 ## Building
 
-`void-numerics` is header-only - copy `include/vn-incl/` into your project, or consume via CMake.
+`void-numerics` is header-only - copy `include/` into your project and `#include <void-numerics>`, or consume via CMake.
 
 ### CMake
 
@@ -135,9 +139,10 @@ target_link_libraries(your_target PRIVATE void-numerics::void-numerics)
 | Option | Default | Description |
 |---|---|---|
 | `VN_UNIT_TESTS` | `OFF` | Build the unit test suite |
-| `VN_BENCHMARKS` | `OFF` | Build the benchmark harness |
-| `VN_ASAN` | `OFF` | Enable AddressSanitizer |
-| `VN_UBSAN` | `OFF` | Enable UndefinedBehaviorSanitizer |
+| `VN_ASAN` | `OFF` | Enable AddressSanitizer for the unit tests |
+| `VN_UBSAN` | `OFF` | Enable UndefinedBehaviorSanitizer for the unit tests |
+
+Sanitizers are automatically disabled for GCC on macOS, and `VN_UBSAN` has no effect on MSVC.
 
 ### Requirements
 
@@ -148,6 +153,8 @@ target_link_libraries(your_target PRIVATE void-numerics::void-numerics)
 
 ## Testing
 
+The unit tests use [rt-ut](https://github.com/nihilai-collective/rt-ut), our header-only C++20 unit testing framework. CMake fetches it automatically through `FetchContent` when `VN_UNIT_TESTS` is on, so there is nothing to install.
+
 The test suite covers:
 
 - Exhaustive value enumeration for `int8`/`uint8`/`int16`/`uint16`
@@ -156,6 +163,8 @@ The test suite covers:
 - Limits: `min`, `min+1`, `min/2`, `max`, `max-1`, `max/2`, `max/3`, `max/7`
 - Round-trip verification (`to_chars` → `from_chars` → equality)
 - Leading-zero handling
+- Overflow detection for `max()+1`, all-9s, and long runs of leading zeros
+- Compile-time (`constexpr`) conversions
 - Stop-at-non-digit semantics (whitespace, alpha, dot, sign)
 - Lone-minus and empty-input edge cases
 - The full LLVM libc++ `<charconv>` test suite (`to_chars`, `from_chars`, integral-pass, roundtrip)
@@ -170,15 +179,7 @@ cmake --build build
 
 ## Benchmarks
 
-The benchmark suite compares `vn::to_chars` against `std::to_chars`, `jeaiii::to_text`, and `fmt::format_to`, and `vn::from_chars` against `std::from_chars` and `strtoll`/`strtoull` - across all integer types and digit lengths, with separate runs for negative and positive signed values, and a dedicated leading-zero test.
-
-```bash
-cmake -S . -B build -DVN_BENCHMARKS=TRUE -DCMAKE_BUILD_TYPE=Release
-cmake --build build
-./build/bin/vn_benchmarks
-```
-
-Results report MB/s throughput per library, per benchmark stage, with win-tallies aggregated across the full test matrix.
+Benchmarks live in their own repository: [stringint-benchmarks](https://github.com/nihilai-collective/stringint-benchmarks). They compare `vn::to_chars` against `std::to_chars`, `jeaiii::to_text`, and `fmt::format_to`, and `vn::from_chars` against `std::from_chars` and `strtoll`/`strtoull` across all integer types and digit lengths, including a dedicated leading-zero test.
 
 ---
 
@@ -208,7 +209,7 @@ For these targets, `std::to_chars` will be more appropriate.
 
 ## License
 
-MIT. See [LICENSE](LICENSE).
+MIT. See [License.md](License.md).
 
 Copyright © 2026 Nihilai Collective Corp.
 
