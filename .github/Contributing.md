@@ -41,6 +41,35 @@ Every conversion must match `std::to_chars` / `std::from_chars` exactly for all 
 - Keep includes lean. Only include what the file actually uses.
 - Keep changes focused. Unrelated refactors belong in their own pull request.
 
+### Declarations
+
+- Namespace-scope `constexpr` values are `inline constexpr`.
+- Class-scope `constexpr` values are `static constexpr`.
+- Function-scope `constexpr` values are `static constexpr`.
+- Every function that can be `const` is `const`, every function that can be `noexcept` is `noexcept`, and every function that can be `consteval` is `consteval`.
+- Every function is marked `VN_INLINE` or `inline`, unless it is `consteval`.
+- Every enum declares an explicit underlying type: the smallest unsigned integer type that holds all of its enumerators.
+
+### Ordering
+
+Members of a class or struct appear in this order:
+
+1. Default constructor
+2. Parameterized constructors
+3. Move assignment operator
+4. Move constructor
+5. Copy assignment operator
+6. Copy constructor
+7. Other member functions
+8. Destructor
+9. Data members
+
+Other member functions are sorted in descending order by the length of the longest line in each function.
+
+Data members are first arranged to minimize padding, then, where that leaves a choice, sorted in descending order by the length of their declaration line. Remember to update aggregate initializers when the member order changes.
+
+Namespace-scope functions follow the same rule: once every function is declared before its first use, sort them in descending order by the length of their longest line.
+
 ## Performance Changes
 
 void-numerics is performance-sensitive. A change on a hot path (SWAR routines, digit counting, conversion loops) should come with results from [stringint-benchmarks](https://github.com/nihilai-collective/stringint-benchmarks) on at least one compiler, and should state any compiler where it is slower. Changes that win on one compiler but regress another need a per-compiler split to be accepted.
@@ -49,6 +78,7 @@ void-numerics is performance-sensitive. A change on a hot path (SWAR routines, d
 
 - [ ] Builds and passes tests on all CI platforms
 - [ ] Formatted with clang-format
+- [ ] Follows the declaration and ordering rules in Code Style
 - [ ] No added explanatory code comments (source attributions are permitted)
 - [ ] Benchmarks included for performance-sensitive changes
 - [ ] Linked to the issue it addresses, if any

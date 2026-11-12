@@ -17,7 +17,7 @@
 #include <array>
 #include <bit>
 
-template<typename... arg_types> void vn_fail_memcpy_impl(arg_types&&...) {
+template<typename... arg_types> inline void vn_fail_memcpy_impl(arg_types&&...) noexcept {
 	static_assert(sizeof...(arg_types) == 0,
 		"Sorry, but un-constrained memcpy is banned in this library! Only use our public-facing include <void-numerics> in your code! Or, if you're inside our own headers, remove "
 		"the std library include you just added.");
@@ -25,7 +25,7 @@ template<typename... arg_types> void vn_fail_memcpy_impl(arg_types&&...) {
 
 namespace std {
 
-	template<typename... arg_types> void vn_fail_memcpy_impl(arg_types&&... args) {
+	template<typename... arg_types> inline void vn_fail_memcpy_impl(arg_types&&... args) noexcept {
 		::vn_fail_memcpy_impl(args...);
 	}
 
@@ -34,8 +34,8 @@ namespace std {
 namespace vn {
 
 	template<uint64_t n, typename value_type_01, typename value_type_02> VN_INLINE constexpr void pow2_memcpy_wrapper(value_type_01* dst, const value_type_02* src) noexcept {
-		constexpr uint64_t src_size = sizeof(value_type_02);
-		constexpr uint64_t dst_size = sizeof(value_type_01);
+		static constexpr uint64_t src_size = sizeof(value_type_02);
+		static constexpr uint64_t dst_size = sizeof(value_type_01);
 		static_assert(n % dst_size == 0);
 		if consteval {
 			std::array<unsigned char, n> bytes{};

@@ -56,9 +56,9 @@
 		#endif
 	#else
 		#if VN_COMPILER_MSVC
-			#define VN_INLINE [[msvc::noinline]]
+			#define VN_INLINE [[msvc::noinline]] inline
 		#else
-			#define VN_INLINE __attribute__((noinline))
+			#define VN_INLINE __attribute__((noinline)) inline
 		#endif
 	#endif
 #endif

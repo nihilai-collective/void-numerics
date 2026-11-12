@@ -22,7 +22,7 @@
 
 `vn::to_chars` and `vn::from_chars` - drop-in replacements for the standard library equivalents*, engineered for performance. Header-only, zero-allocation, no exceptions, no RTTI.
 
- ###### *For integers, float/double parsing/serializing is a WIP
+ ###### *For integers. `float`/`double` overloads exist but currently forward to `std::to_chars` / `std::from_chars`; dedicated floating-point conversion is a WIP
 ---
 
 ## Why
@@ -45,9 +45,9 @@ Every conversion is exhaustively unit-tested against `std::to_chars` / `std::fro
 - **C++23** - leverages concepts for type-correct dispatch
 - **Compile-time tables** for digit conversion and overflow bounds
 - **Multiply-and-shift division replacement** for hot paths
-- **Fixed-length SWAR parsing** - `vn::from_chars` dispatches to a parser sized to the digit count, validating and folding 8/4/2/1-byte chunks
-- **Force-inlined helpers** with manual ladder dispatch sized to digit count
-- **Cross-platform CI**: Linux Clang-20, Linux GCC-14, macOS Clang, macOS GCC-15, Windows MSVC
+- **Fixed-length SWAR parsing** - for 32- and 64-bit types, `vn::from_chars` dispatches to a parser sized to the digit count, validating and folding 8/4/2/1-byte chunks; 8- and 16-bit types use an unrolled per-digit parser
+- **Force-inlined helpers** (in `Release` builds) with manual ladder dispatch sized to digit count
+- **Cross-platform CI**: Linux Clang and GCC (newest available packages), macOS Homebrew Clang and GCC, Windows MSVC
 - **AddressSanitizer / UndefinedBehaviorSanitizer** support out of the box
 
 ---
@@ -107,8 +107,8 @@ auto r = vn::to_chars(buf, buf + 32, 0xDEADBEEF, 16);
 ### `vn::to_chars`
 
 ```cpp
-template<integer_types v_type>
-std::to_chars_result to_chars(char* first, char* last, v_type value, int32_t base = 10) noexcept;
+template<detail::integer_types v_type>
+constexpr std::to_chars_result to_chars(char* first, char* last, v_type value, int32_t base = 10) noexcept;
 ```
 
 Writes the textual representation of `value` to `[first, last)`. Returns `{ptr, std::errc{}}` on success, where `ptr` is one past the last character written. Returns `{last, std::errc::value_too_large}` if the buffer is too small.
@@ -116,8 +116,8 @@ Writes the textual representation of `value` to `[first, last)`. Returns `{ptr, 
 ### `vn::from_chars`
 
 ```cpp
-template<integer_types v_type>
-std::from_chars_result from_chars(const char* first, const char* last, v_type& value, int32_t base = 10) noexcept;
+template<detail::integer_types v_type>
+constexpr std::from_chars_result from_chars(const char* first, const char* last, v_type& value, int32_t base = 10) noexcept;
 ```
 
 Parses an integer from `[first, last)` into `value`. Returns `{ptr, std::errc{}}` on success, where `ptr` points to the first character not consumed. Returns `{first, std::errc::invalid_argument}` if no characters could be parsed (empty input, a lone `-`, or `-` on an unsigned type). Returns `{ptr, std::errc::result_out_of_range}` if the value does not fit in `v_type`, where `ptr` points past the full run of digits and `value` is left unmodified.
@@ -128,7 +128,7 @@ Parses an integer from `[first, last)` into `value`. Returns `{ptr, std::errc{}}
 
 ## Building
 
-`void-numerics` is header-only - copy `include/` into your project and `#include <void-numerics>`, or consume via CMake.
+`void-numerics` is header-only - copy `include/` into your project and `#include <void-numerics>`, or consume it through CMake or vcpkg.
 
 ### CMake
 
@@ -136,6 +136,15 @@ Parses an integer from `[first, last)` into `value`. Returns `{ptr, std::errc{}}
 add_subdirectory(void-numerics)
 target_link_libraries(your_target PRIVATE void-numerics::void-numerics)
 ```
+
+After `cmake --install`, or through the vcpkg port in `vcpkg/ports/void-numerics`:
+
+```cmake
+find_package(void-numerics CONFIG REQUIRED)
+target_link_libraries(your_target PRIVATE void-numerics::void-numerics)
+```
+
+Linking the target also defines the `VN_*` architecture, compiler, and inlining macros for your build. When the headers are used without CMake, `vn-incl/defines.hpp` detects them instead.
 
 ### CMake options
 
@@ -170,12 +179,14 @@ The test suite covers:
 - Compile-time (`constexpr`) conversions
 - Stop-at-non-digit semantics (whitespace, alpha, dot, sign)
 - Lone-minus and empty-input edge cases
+- Poisoned-output checks: `value` is left untouched on failure, for every length and terminator
+- Leading-zero trimming over uninitialized ("dirty") buffers and inputs that end exactly at `last`
 - The full LLVM libc++ `<charconv>` test suite (`to_chars`, `from_chars`, integral-pass, roundtrip)
 
 ```bash
 cmake -S . -B build -DVN_UNIT_TESTS=TRUE -DCMAKE_BUILD_TYPE=Debug
 cmake --build build
-./build/bin/vn-unit-tests
+./build/vn-unit-tests
 ```
 
 ---
@@ -188,22 +199,22 @@ Benchmarks live in their own repository: [stringint-benchmarks](https://github.c
 
 ## Memory Footprint
 
-`vn::to_chars` uses a precomputed lookup table of approximately 40KB to enable 
-branch-free digit pair extraction. This is well-suited to any CPU with an L2 
+`vn::to_chars` uses precomputed 2-, 3-, and 4-digit lookup tables (about 200B, 
+4KB, and 40KB, so roughly 44KB in total) to emit up to four digits per load. This is well-suited to any CPU with an L2 
 cache of 256KB or larger (all modern desktop, server, and laptop CPUs) - the 
 table comfortably resides in L2 while streaming integer data flows through L1, 
 with no contention between the two. Benchmarks demonstrate this behavior holds 
 even under explicit cache-eviction pressure between runs.
 
-`vn::from_chars` carries no significant lookup tables and is suitable for any 
-target.
+`vn::from_chars` only carries small 256-entry overflow-bound tables (one per 
+integer type and sign actually used) and is suitable for any target.
 
 `vn::to_chars` is **not recommended for**:
 
 - Microcontrollers without L2 cache (Cortex-M0/M3/M4/M7, AVR, MSP430) - the 
   table cannot fit in available cache or SRAM
 - Embedded targets where total flash/SRAM is smaller than the lookup table itself
-- Any environment where the 40KB constant data footprint is unacceptable for 
+- Any environment where the roughly 44KB constant data footprint is unacceptable for 
   binary size reasons
 
 For these targets, `std::to_chars` will be more appropriate.
