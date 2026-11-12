@@ -51,27 +51,27 @@ namespace vn {
 			}
 		}
 
-		VN_INLINE constexpr const char* strip_tag(uintptr_t ptr) noexcept {
-			return std::bit_cast<const char*>(ptr & addr_mask);
-		}
-
 		VN_INLINE constexpr uint64_t get_tag(const uintptr_t ptr) noexcept {
 			return (ptr & tag_mask) >> tag_shift;
 		}
 
+		VN_INLINE constexpr const char* strip_tag(uintptr_t ptr) noexcept {
+			return std::bit_cast<const char*>(ptr & addr_mask);
+		}
+
 		template<integer_types v_type> struct parse_chunk_result {
-			v_type value;
 			uint64_t digits;
+			v_type value;
 		};
+
+		template<uint8_types v_type> VN_INLINE constexpr v_type load(const uint8_t* __restrict str) noexcept {
+			return *str;
+		}
 
 		template<uint_types v_type> VN_INLINE constexpr v_type load(const uint8_t* __restrict str) noexcept {
 			v_type chunk;
 			pow2_memcpy_wrapper<sizeof(v_type)>(&chunk, str);
 			return chunk;
-		}
-
-		template<uint8_types v_type> VN_INLINE constexpr v_type load(const uint8_t* __restrict str) noexcept {
-			return *str;
 		}
 
 		template<uint_types v_type> VN_INLINE constexpr v_type mask(v_type raw) noexcept {
@@ -129,7 +129,7 @@ namespace vn {
 				if (incorrect(s1)) [[unlikely]] {
 					return { 0, 0 };
 				}
-				return { static_cast<v_type>(fold<uint8_t>::impl(s1)), 1 };
+				return { 1, static_cast<v_type>(fold<uint8_t>::impl(s1)) };
 			}
 		};
 
@@ -138,9 +138,9 @@ namespace vn {
 				const uint16_t s2 = load<uint16_t>(str);
 				const uint16_t m2 = mask(s2);
 				if (m2) [[unlikely]] {
-					return { 0, static_cast<uint64_t>(count_zeros(m2) >> 3) };
+					return { static_cast<uint64_t>(count_zeros(m2) >> 3), 0 };
 				}
-				return { static_cast<v_type>(fold<uint16_t>::impl(s2)), 2 };
+				return { 2, static_cast<v_type>(fold<uint16_t>::impl(s2)) };
 			}
 		};
 
@@ -150,12 +150,12 @@ namespace vn {
 				const uint8_t s1  = load<uint8_t>(str + 2);
 				const uint16_t m2 = mask(s2);
 				if (m2) [[unlikely]] {
-					return { 0, static_cast<uint64_t>(count_zeros(m2) >> 3) };
+					return { static_cast<uint64_t>(count_zeros(m2) >> 3), 0 };
 				}
 				if (incorrect(s1)) [[unlikely]] {
-					return { 0, 2 };
+					return { 2, 0 };
 				}
-				return { static_cast<v_type>(fold<uint16_t>::impl(s2) * 10ULL + fold<uint8_t>::impl(s1)), 3 };
+				return { 3, static_cast<v_type>(fold<uint16_t>::impl(s2) * 10ULL + fold<uint8_t>::impl(s1)) };
 			}
 		};
 
@@ -164,9 +164,9 @@ namespace vn {
 				const uint32_t s4 = load<uint32_t>(str);
 				const uint32_t m4 = mask(s4);
 				if (m4) [[unlikely]] {
-					return { 0, static_cast<uint64_t>(count_zeros(m4) >> 3) };
+					return { static_cast<uint64_t>(count_zeros(m4) >> 3), 0 };
 				}
-				return { static_cast<v_type>(fold<uint32_t>::impl(s4)), 4 };
+				return { 4, static_cast<v_type>(fold<uint32_t>::impl(s4)) };
 			}
 		};
 
@@ -176,12 +176,12 @@ namespace vn {
 				const uint8_t s1  = load<uint8_t>(str + 4);
 				const uint32_t m4 = mask(s4);
 				if (m4) [[unlikely]] {
-					return { 0, static_cast<uint64_t>(count_zeros(m4) >> 3) };
+					return { static_cast<uint64_t>(count_zeros(m4) >> 3), 0 };
 				}
 				if (incorrect(s1)) [[unlikely]] {
-					return { 0, 4 };
+					return { 4, 0 };
 				}
-				return { static_cast<v_type>(fold<uint32_t>::impl(s4) * 10ULL + fold<uint8_t>::impl(s1)), 5 };
+				return { 5, static_cast<v_type>(fold<uint32_t>::impl(s4) * 10ULL + fold<uint8_t>::impl(s1)) };
 			}
 		};
 
@@ -191,13 +191,13 @@ namespace vn {
 				const uint16_t s2 = load<uint16_t>(str + 4);
 				const uint32_t m4 = mask(s4);
 				if (m4) [[unlikely]] {
-					return { 0, static_cast<uint64_t>(count_zeros(m4) >> 3) };
+					return { static_cast<uint64_t>(count_zeros(m4) >> 3), 0 };
 				}
 				const uint16_t m2 = mask(s2);
 				if (m2) [[unlikely]] {
-					return { 0, 4ULL + static_cast<uint64_t>(count_zeros(m2) >> 3) };
+					return { 4ULL + static_cast<uint64_t>(count_zeros(m2) >> 3), 0 };
 				}
-				return { static_cast<v_type>(fold<uint32_t>::impl(s4) * 100ULL + fold<uint16_t>::impl(s2)), 6 };
+				return { 6, static_cast<v_type>(fold<uint32_t>::impl(s4) * 100ULL + fold<uint16_t>::impl(s2)) };
 			}
 		};
 
@@ -208,16 +208,16 @@ namespace vn {
 				const uint8_t s1  = load<uint8_t>(str + 6);
 				const uint32_t m4 = mask(s4);
 				if (m4) [[unlikely]] {
-					return { 0, static_cast<uint64_t>(count_zeros(m4) >> 3) };
+					return { static_cast<uint64_t>(count_zeros(m4) >> 3), 0 };
 				}
 				const uint16_t m2 = mask(s2);
 				if (m2) [[unlikely]] {
-					return { 0, 4ULL + static_cast<uint64_t>(count_zeros(m2) >> 3) };
+					return { 4ULL + static_cast<uint64_t>(count_zeros(m2) >> 3), 0 };
 				}
 				if (incorrect(s1)) [[unlikely]] {
-					return { 0, 6 };
+					return { 6, 0 };
 				}
-				return { static_cast<v_type>(fold<uint32_t>::impl(s4) * 1000ULL + fold<uint16_t>::impl(s2) * 10ULL + fold<uint8_t>::impl(s1)), 7 };
+				return { 7, static_cast<v_type>(fold<uint32_t>::impl(s4) * 1000ULL + fold<uint16_t>::impl(s2) * 10ULL + fold<uint8_t>::impl(s1)) };
 			}
 		};
 
@@ -226,9 +226,9 @@ namespace vn {
 				const uint64_t s8 = load<uint64_t>(str);
 				const uint64_t m8 = mask(s8);
 				if (m8) [[unlikely]] {
-					return { 0, count_zeros(m8) >> 3 };
+					return { count_zeros(m8) >> 3, 0 };
 				}
-				return { static_cast<v_type>(fold<uint64_t>::impl(s8)), 8 };
+				return { 8, static_cast<v_type>(fold<uint64_t>::impl(s8)) };
 			}
 		};
 
@@ -238,12 +238,12 @@ namespace vn {
 				const uint8_t s1  = load<uint8_t>(str + 8);
 				const uint64_t m8 = mask(s8);
 				if (m8) [[unlikely]] {
-					return { 0, count_zeros(m8) >> 3 };
+					return { count_zeros(m8) >> 3, 0 };
 				}
 				if (incorrect(s1)) [[unlikely]] {
-					return { 0, 8 };
+					return { 8, 0 };
 				}
-				return { static_cast<v_type>(fold<uint64_t>::impl(s8) * 10ULL + fold<uint8_t>::impl(s1)), 9 };
+				return { 9, static_cast<v_type>(fold<uint64_t>::impl(s8) * 10ULL + fold<uint8_t>::impl(s1)) };
 			}
 		};
 
@@ -253,13 +253,13 @@ namespace vn {
 				const uint16_t s2 = load<uint16_t>(str + 8);
 				const uint64_t m8 = mask(s8);
 				if (m8) [[unlikely]] {
-					return { 0, count_zeros(m8) >> 3 };
+					return { count_zeros(m8) >> 3, 0 };
 				}
 				const uint16_t m2 = mask(s2);
 				if (m2) [[unlikely]] {
-					return { 0, 8ULL + static_cast<uint64_t>(count_zeros(m2) >> 3) };
+					return { 8ULL + static_cast<uint64_t>(count_zeros(m2) >> 3), 0 };
 				}
-				return { static_cast<v_type>(fold<uint64_t>::impl(s8) * 100ULL + fold<uint16_t>::impl(s2)), 10 };
+				return { 10, static_cast<v_type>(fold<uint64_t>::impl(s8) * 100ULL + fold<uint16_t>::impl(s2)) };
 			}
 		};
 
@@ -270,16 +270,16 @@ namespace vn {
 				const uint8_t s1  = load<uint8_t>(str + 10);
 				const uint64_t m8 = mask(s8);
 				if (m8) [[unlikely]] {
-					return { 0, count_zeros(m8) >> 3 };
+					return { count_zeros(m8) >> 3, 0 };
 				}
 				const uint16_t m2 = mask(s2);
 				if (m2) [[unlikely]] {
-					return { 0, 8ULL + static_cast<uint64_t>(count_zeros(m2) >> 3) };
+					return { 8ULL + static_cast<uint64_t>(count_zeros(m2) >> 3), 0 };
 				}
 				if (incorrect(s1)) [[unlikely]] {
-					return { 0, 10 };
+					return { 10, 0 };
 				}
-				return { static_cast<v_type>(fold<uint64_t>::impl(s8) * 1000ULL + fold<uint16_t>::impl(s2) * 10ULL + fold<uint8_t>::impl(s1)), 11 };
+				return { 11, static_cast<v_type>(fold<uint64_t>::impl(s8) * 1000ULL + fold<uint16_t>::impl(s2) * 10ULL + fold<uint8_t>::impl(s1)) };
 			}
 		};
 
@@ -289,13 +289,13 @@ namespace vn {
 				const uint32_t s4 = load<uint32_t>(str + 8);
 				const uint64_t m8 = mask(s8);
 				if (m8) [[unlikely]] {
-					return { 0, count_zeros(m8) >> 3 };
+					return { count_zeros(m8) >> 3, 0 };
 				}
 				const uint32_t m4 = mask(s4);
 				if (m4) [[unlikely]] {
-					return { 0, 8ULL + static_cast<uint64_t>(count_zeros(m4) >> 3) };
+					return { 8ULL + static_cast<uint64_t>(count_zeros(m4) >> 3), 0 };
 				}
-				return { static_cast<v_type>(fold<uint64_t>::impl(s8) * 10000ULL + fold<uint32_t>::impl(s4)), 12 };
+				return { 12, static_cast<v_type>(fold<uint64_t>::impl(s8) * 10000ULL + fold<uint32_t>::impl(s4)) };
 			}
 		};
 
@@ -306,16 +306,16 @@ namespace vn {
 				const uint8_t s1  = load<uint8_t>(str + 12);
 				const uint64_t m8 = mask(s8);
 				if (m8) [[unlikely]] {
-					return { 0, count_zeros(m8) >> 3 };
+					return { count_zeros(m8) >> 3, 0 };
 				}
 				const uint32_t m4 = mask(s4);
 				if (m4) [[unlikely]] {
-					return { 0, 8ULL + static_cast<uint64_t>(count_zeros(m4) >> 3) };
+					return { 8ULL + static_cast<uint64_t>(count_zeros(m4) >> 3), 0 };
 				}
 				if (incorrect(s1)) [[unlikely]] {
-					return { 0, 12 };
+					return { 12, 0 };
 				}
-				return { static_cast<v_type>(fold<uint64_t>::impl(s8) * 100000ULL + fold<uint32_t>::impl(s4) * 10ULL + fold<uint8_t>::impl(s1)), 13 };
+				return { 13, static_cast<v_type>(fold<uint64_t>::impl(s8) * 100000ULL + fold<uint32_t>::impl(s4) * 10ULL + fold<uint8_t>::impl(s1)) };
 			}
 		};
 
@@ -326,17 +326,17 @@ namespace vn {
 				const uint16_t s2 = load<uint16_t>(str + 12);
 				const uint64_t m8 = mask(s8);
 				if (m8) [[unlikely]] {
-					return { 0, count_zeros(m8) >> 3 };
+					return { count_zeros(m8) >> 3, 0 };
 				}
 				const uint32_t m4 = mask(s4);
 				if (m4) [[unlikely]] {
-					return { 0, 8ULL + static_cast<uint64_t>(count_zeros(m4) >> 3) };
+					return { 8ULL + static_cast<uint64_t>(count_zeros(m4) >> 3), 0 };
 				}
 				const uint16_t m2 = mask(s2);
 				if (m2) [[unlikely]] {
-					return { 0, 12ULL + static_cast<uint64_t>(count_zeros(m2) >> 3) };
+					return { 12ULL + static_cast<uint64_t>(count_zeros(m2) >> 3), 0 };
 				}
-				return { static_cast<v_type>(fold<uint64_t>::impl(s8) * 1000000ULL + fold<uint32_t>::impl(s4) * 100ULL + fold<uint16_t>::impl(s2)), 14 };
+				return { 14, static_cast<v_type>(fold<uint64_t>::impl(s8) * 1000000ULL + fold<uint32_t>::impl(s4) * 100ULL + fold<uint16_t>::impl(s2)) };
 			}
 		};
 
@@ -348,22 +348,21 @@ namespace vn {
 				const uint8_t s1  = load<uint8_t>(str + 14);
 				const uint64_t m8 = mask(s8);
 				if (m8) [[unlikely]] {
-					return { 0, count_zeros(m8) >> 3 };
+					return { count_zeros(m8) >> 3, 0 };
 				}
 				const uint32_t m4 = mask(s4);
 				if (m4) [[unlikely]] {
-					return { 0, 8ULL + static_cast<uint64_t>(count_zeros(m4) >> 3) };
+					return { 8ULL + static_cast<uint64_t>(count_zeros(m4) >> 3), 0 };
 				}
 				const uint16_t m2 = mask(s2);
 				if (m2) [[unlikely]] {
-					return { 0, 12ULL + static_cast<uint64_t>(count_zeros(m2) >> 3) };
+					return { 12ULL + static_cast<uint64_t>(count_zeros(m2) >> 3), 0 };
 				}
 				if (incorrect(s1)) [[unlikely]] {
-					return { 0, 14 };
+					return { 14, 0 };
 				}
-				return { static_cast<v_type>(
-							 fold<uint64_t>::impl(s8) * 10000000ULL + fold<uint32_t>::impl(s4) * 1000ULL + fold<uint16_t>::impl(s2) * 10ULL + fold<uint8_t>::impl(s1)),
-					15 };
+				return { 15,
+					static_cast<v_type>(fold<uint64_t>::impl(s8) * 10000000ULL + fold<uint32_t>::impl(s4) * 1000ULL + fold<uint16_t>::impl(s2) * 10ULL + fold<uint8_t>::impl(s1)) };
 			}
 		};
 
@@ -373,13 +372,13 @@ namespace vn {
 				const uint64_t s8b = load<uint64_t>(str + 8);
 				const uint64_t m8a = mask(s8a);
 				if (m8a) [[unlikely]] {
-					return { 0, count_zeros(m8a) >> 3 };
+					return { count_zeros(m8a) >> 3, 0 };
 				}
 				const uint64_t m8b = mask(s8b);
 				if (m8b) [[unlikely]] {
-					return { 0, 8ULL + (count_zeros(m8b) >> 3) };
+					return { 8ULL + (count_zeros(m8b) >> 3), 0 };
 				}
-				return { static_cast<v_type>(fold<uint64_t>::impl(s8a) * 100000000ULL + fold<uint64_t>::impl(s8b)), 16 };
+				return { 16, static_cast<v_type>(fold<uint64_t>::impl(s8a) * 100000000ULL + fold<uint64_t>::impl(s8b)) };
 			}
 		};
 
@@ -390,16 +389,16 @@ namespace vn {
 				const uint8_t s1   = load<uint8_t>(str + 16);
 				const uint64_t m8a = mask(s8a);
 				if (m8a) [[unlikely]] {
-					return { 0, count_zeros(m8a) >> 3 };
+					return { count_zeros(m8a) >> 3, 0 };
 				}
 				const uint64_t m8b = mask(s8b);
 				if (m8b) [[unlikely]] {
-					return { 0, 8ULL + (count_zeros(m8b) >> 3) };
+					return { 8ULL + (count_zeros(m8b) >> 3), 0 };
 				}
 				if (incorrect(s1)) [[unlikely]] {
-					return { 0, 16 };
+					return { 16, 0 };
 				}
-				return { static_cast<v_type>(fold<uint64_t>::impl(s8a) * 1000000000ULL + fold<uint64_t>::impl(s8b) * 10ULL + fold<uint8_t>::impl(s1)), 17 };
+				return { 17, static_cast<v_type>(fold<uint64_t>::impl(s8a) * 1000000000ULL + fold<uint64_t>::impl(s8b) * 10ULL + fold<uint8_t>::impl(s1)) };
 			}
 		};
 
@@ -410,17 +409,17 @@ namespace vn {
 				const uint16_t s2  = load<uint16_t>(str + 16);
 				const uint64_t m8a = mask(s8a);
 				if (m8a) [[unlikely]] {
-					return { 0, count_zeros(m8a) >> 3 };
+					return { count_zeros(m8a) >> 3, 0 };
 				}
 				const uint64_t m8b = mask(s8b);
 				if (m8b) [[unlikely]] {
-					return { 0, 8ULL + (count_zeros(m8b) >> 3) };
+					return { 8ULL + (count_zeros(m8b) >> 3), 0 };
 				}
 				const uint16_t m2 = mask(s2);
 				if (m2) [[unlikely]] {
-					return { 0, 16ULL + static_cast<uint64_t>(count_zeros(m2) >> 3) };
+					return { 16ULL + static_cast<uint64_t>(count_zeros(m2) >> 3), 0 };
 				}
-				return { static_cast<v_type>(fold<uint64_t>::impl(s8a) * 10000000000ULL + fold<uint64_t>::impl(s8b) * 100ULL + fold<uint16_t>::impl(s2)), 18 };
+				return { 18, static_cast<v_type>(fold<uint64_t>::impl(s8a) * 10000000000ULL + fold<uint64_t>::impl(s8b) * 100ULL + fold<uint16_t>::impl(s2)) };
 			}
 		};
 
@@ -432,22 +431,22 @@ namespace vn {
 				const uint8_t s1   = load<uint8_t>(str + 18);
 				const uint64_t m8a = mask(s8a);
 				if (m8a) [[unlikely]] {
-					return { 0, count_zeros(m8a) >> 3 };
+					return { count_zeros(m8a) >> 3, 0 };
 				}
 				const uint64_t m8b = mask(s8b);
 				if (m8b) [[unlikely]] {
-					return { 0, 8ULL + (count_zeros(m8b) >> 3) };
+					return { 8ULL + (count_zeros(m8b) >> 3), 0 };
 				}
 				const uint16_t m2 = mask(s2);
 				if (m2) [[unlikely]] {
-					return { 0, 16ULL + static_cast<uint64_t>(count_zeros(m2) >> 3) };
+					return { 16ULL + static_cast<uint64_t>(count_zeros(m2) >> 3), 0 };
 				}
 				if (incorrect(s1)) [[unlikely]] {
-					return { 0, 18 };
+					return { 18, 0 };
 				}
-				return { static_cast<v_type>(
-							 fold<uint64_t>::impl(s8a) * 100000000000ULL + fold<uint64_t>::impl(s8b) * 1000ULL + fold<uint16_t>::impl(s2) * 10ULL + fold<uint8_t>::impl(s1)),
-					19 };
+				return { 19,
+					static_cast<v_type>(
+						fold<uint64_t>::impl(s8a) * 100000000000ULL + fold<uint64_t>::impl(s8b) * 1000ULL + fold<uint16_t>::impl(s2) * 10ULL + fold<uint8_t>::impl(s1)) };
 			}
 		};
 
@@ -458,23 +457,19 @@ namespace vn {
 				const uint32_t s4  = load<uint32_t>(str + 16);
 				const uint64_t m8a = mask(s8a);
 				if (m8a) [[unlikely]] {
-					return { 0, count_zeros(m8a) >> 3 };
+					return { count_zeros(m8a) >> 3, 0 };
 				}
 				const uint64_t m8b = mask(s8b);
 				if (m8b) [[unlikely]] {
-					return { 0, 8ULL + (count_zeros(m8b) >> 3) };
+					return { 8ULL + (count_zeros(m8b) >> 3), 0 };
 				}
 				const uint32_t m4 = mask(s4);
 				if (m4) [[unlikely]] {
-					return { 0, 16ULL + static_cast<uint64_t>(count_zeros(m4) >> 3) };
+					return { 16ULL + static_cast<uint64_t>(count_zeros(m4) >> 3), 0 };
 				}
-				return { static_cast<v_type>(fold<uint64_t>::impl(s8a) * 1000000000000ULL + fold<uint64_t>::impl(s8b) * 10000ULL + fold<uint32_t>::impl(s4)), 20 };
+				return { 20, static_cast<v_type>(fold<uint64_t>::impl(s8a) * 1000000000000ULL + fold<uint64_t>::impl(s8b) * 10000ULL + fold<uint32_t>::impl(s4)) };
 			}
 		};
-
-		template<uint_types v_type> VN_INLINE constexpr bool vn_is_digit(v_type value) noexcept {
-			return ((static_cast<uint8_t>(value - '0')) < 10);
-		}
 
 		VN_INLINE constexpr const uint8_t* trim_leading_zeros(const uint8_t* __restrict iter VN_LIFETIME_BOUND, const uint8_t* __restrict end) noexcept {
 			{
@@ -511,6 +506,10 @@ namespace vn {
 				++iter;
 			}
 			return iter;
+		}
+
+		template<uint_types v_type> VN_INLINE constexpr bool vn_is_digit(v_type value) noexcept {
+			return ((static_cast<uint8_t>(value - '0')) < 10);
 		}
 
 		template<typename v_type> struct from_chars_impl;

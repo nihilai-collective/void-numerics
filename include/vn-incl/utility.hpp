@@ -57,8 +57,8 @@ namespace vn {
 			}
 		}() };
 
-		template<typename v_type, bool negative> consteval std::array<std::make_unsigned_t<v_type>, 256> gen_raw_comp_vals() {
-			constexpr auto max_value{ static_cast<std::make_unsigned_t<v_type>>(std::numeric_limits<base_t<v_type>>::max()) + comp_val_addition<negative> };
+		template<typename v_type, bool negative> consteval std::array<std::make_unsigned_t<v_type>, 256> gen_raw_comp_vals() noexcept {
+			static constexpr auto max_value{ static_cast<std::make_unsigned_t<v_type>>(std::numeric_limits<base_t<v_type>>::max()) + comp_val_addition<negative> };
 			std::array<std::make_unsigned_t<v_type>, 256> return_values_interna{};
 			return_values_interna['0'] = (max_value - 0) / 10;
 			return_values_interna['1'] = (max_value - 1) / 10;
@@ -81,7 +81,7 @@ namespace vn {
 			return c - static_cast<uint8_t>('0') < 10;
 		}
 
-		template<uint64_t count> consteval uint64_t gen_table_size() {
+		template<uint64_t count> consteval uint64_t gen_table_size() noexcept {
 			uint64_t result = 1;
 			for (uint64_t j = 0; j < count; ++j) {
 				result *= 10;
@@ -91,9 +91,9 @@ namespace vn {
 
 		template<uint64_t count> using gen_table_value_t = std::conditional_t<(count <= 2ULL), uint16_t, uint32_t>;
 
-		template<uint64_t count> consteval std::array<gen_table_value_t<count>, gen_table_size<count>()> gen_table() {
-			using value_type		= gen_table_value_t<count>;
-			constexpr uint64_t size = gen_table_size<count>();
+		template<uint64_t count> consteval std::array<gen_table_value_t<count>, gen_table_size<count>()> gen_table() noexcept {
+			using value_type			   = gen_table_value_t<count>;
+			static constexpr uint64_t size = gen_table_size<count>();
 			std::array<value_type, size> t{};
 			for (uint64_t i = 0; i < size; ++i) {
 				uint64_t divisor = size / 10;

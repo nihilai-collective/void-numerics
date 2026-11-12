@@ -18,7 +18,7 @@ namespace detail {
 	using true_type	 = std::integral_constant<bool, true>;
 	using false_type = std::integral_constant<bool, false>;
 
-	enum class conversion_classes {
+	enum class conversion_classes : uint8_t {
 		i_to_str,
 		d_to_str,
 		str_to_i,
