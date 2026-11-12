@@ -11,7 +11,7 @@
 
 namespace vn_to_chars_tests {
 
-	template<typename v_type> inline bool chars_match(v_type v) {
+	template<typename v_type> inline bool chars_match(v_type v) noexcept {
 		char ref[32]{};
 		char tst[32]{};
 		auto r1		 = std::to_chars(ref, ref + 32, v);
@@ -21,7 +21,7 @@ namespace vn_to_chars_tests {
 		return ref_len == tst_len && std::memcmp(ref, tst, ref_len) == 0;
 	}
 
-	template<rt_ut::string_literal name, vn::detail::integer_types v_type> void test_function() {
+	template<rt_ut::string_literal name, vn::detail::integer_types v_type> inline void test_function() {
 		rt_ut::unit_test<name + "-to_chars zero", true>::assert_eq(true, [] {
 			return chars_match<v_type>(0);
 		});
@@ -229,7 +229,7 @@ namespace vn_to_chars_tests {
 template<detail::conversion_classes> struct tests;
 
 template<> struct tests<detail::conversion_classes::i_to_str> {
-	static void impl() {
+	inline static void impl() {
 		vn_to_chars_tests::test_function<"uint8", uint8_t>();
 		vn_to_chars_tests::test_function<"int8", int8_t>();
 		vn_to_chars_tests::test_function<"uint16", uint16_t>();

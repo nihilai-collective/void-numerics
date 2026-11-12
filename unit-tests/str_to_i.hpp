@@ -11,32 +11,32 @@
 
 namespace vn_from_chars_tests {
 
-	template<typename v_type> inline v_type ref_val(const char* s) {
+	template<typename v_type> inline v_type ref_val(const char* s) noexcept {
 		v_type v{};
 		std::from_chars(s, s + std::strlen(s), v);
 		return v;
 	}
-	template<typename v_type> inline v_type vn_val(const char* s) {
+	template<typename v_type> inline v_type vn_val(const char* s) noexcept {
 		v_type v{};
 		vn::from_chars(s, s + std::strlen(s), v);
 		return v;
 	}
-	template<typename v_type> inline std::ptrdiff_t ref_len(const char* s) {
+	template<typename v_type> inline std::ptrdiff_t ref_len(const char* s) noexcept {
 		v_type v{};
 		auto r = std::from_chars(s, s + std::strlen(s), v);
 		return r.ptr - s;
 	}
-	template<typename v_type> inline std::ptrdiff_t vn_len(const char* s) {
+	template<typename v_type> inline std::ptrdiff_t vn_len(const char* s) noexcept {
 		v_type v{};
 		auto r = vn::from_chars(s, s + std::strlen(s), v);
 		return r.ptr - s;
 	}
-	template<typename v_type> inline bool ref_ok(const char* s) {
+	template<typename v_type> inline bool ref_ok(const char* s) noexcept {
 		v_type v{};
 		auto r = std::from_chars(s, s + std::strlen(s), v);
 		return r.ptr == s + std::strlen(s);
 	}
-	template<typename v_type> inline bool vn_ok(const char* s) {
+	template<typename v_type> inline bool vn_ok(const char* s) noexcept {
 		v_type v{};
 		auto r = vn::from_chars(s, s + std::strlen(s), v);
 		return r.ptr == s + std::strlen(s);
@@ -46,24 +46,24 @@ namespace vn_from_chars_tests {
 		v_type value{};
 		std::ptrdiff_t consumed{};
 		std::errc ec{};
-		bool operator==(const parse_result& o) const noexcept {
+		inline bool operator==(const parse_result& o) const noexcept {
 			return value == o.value && consumed == o.consumed;
 		}
 	};
 
-	template<typename v_type> inline parse_result<v_type> ref_parse(const char* s, std::size_t n) {
+	template<typename v_type> inline parse_result<v_type> ref_parse(const char* s, std::size_t n) noexcept {
 		v_type v{};
 		auto r = std::from_chars(s, s + n, v);
 		return { v, r.ptr - s, r.ec };
 	}
 
-	template<typename v_type> inline parse_result<v_type> vn_parse(const char* s, std::size_t n) {
+	template<typename v_type> inline parse_result<v_type> vn_parse(const char* s, std::size_t n) noexcept {
 		v_type v{};
 		auto r = vn::from_chars(s, s + n, v);
 		return { v, r.ptr - s, r.ec };
 	}
 
-	template<typename v_type> inline bool agree(const std::string& s) {
+	template<typename v_type> inline bool agree(const std::string& s) noexcept {
 		return ref_parse<v_type>(s.data(), s.size()) == vn_parse<v_type>(s.data(), s.size());
 	}
 
@@ -115,7 +115,7 @@ namespace vn_from_chars_tests {
 		return ptr_ok && val_ok;
 	}
 
-	template<rt_ut::string_literal name, vn::detail::integer_types v_type> void test_function() {
+	template<rt_ut::string_literal name, vn::detail::integer_types v_type> inline void test_function() {
 		rt_ut::unit_test<name + "-overflow max plus one", true>::assert_eq(true, [] {
 			return agree<v_type>(increment_decimal(digits_of(std::numeric_limits<v_type>::max())));
 		});
@@ -810,7 +810,7 @@ namespace vn_from_chars_tests {
 template<detail::conversion_classes> struct tests;
 
 template<> struct tests<detail::conversion_classes::str_to_i> {
-	static void impl() {
+	inline static void impl() {
 		vn_from_chars_tests::test_function<"uint8", uint8_t>();
 		vn_from_chars_tests::test_function<"int8", int8_t>();
 		vn_from_chars_tests::test_function<"uint16", uint16_t>();
